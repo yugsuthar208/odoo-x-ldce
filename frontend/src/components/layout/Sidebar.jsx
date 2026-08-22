@@ -1,12 +1,13 @@
 import { NavLink, Link } from "react-router-dom";
-import { LayoutDashboard, MapPin, Globe, User, Home } from "lucide-react";
+import { LayoutDashboard, MapPin, Globe, User, Home, Sparkles } from "lucide-react";
 
 const NAV_ITEMS = [
-  { to: "/",          icon: Home,            label: "Home"      },
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/trips",     icon: MapPin,          label: "My Trips"  },
-  { to: "/explore",   icon: Globe,           label: "Explore"   },
-  { to: "/profile",   icon: User,            label: "Profile"   },
+  { to: "/",            icon: Home,            label: "Home"           },
+  { to: "/dashboard",   icon: LayoutDashboard, label: "Dashboard"      },
+  { to: "/ai-planner",  icon: Sparkles,        label: "AI Planner"     },
+  { to: "/trips",       icon: MapPin,          label: "My Trips"       },
+  { to: "/explore",     icon: Globe,           label: "Explore"        },
+  { to: "/profile",     icon: User,            label: "Profile"        },
 ];
 
 export function Sidebar() {

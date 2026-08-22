@@ -1,12 +1,13 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, MapPin, Globe, User, Home } from "lucide-react";
+import { LayoutDashboard, MapPin, Globe, User, Home, Sparkles } from "lucide-react";
 
 const TABS = [
-  { to: "/",          icon: Home,            label: "Home"    },
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dash"    },
-  { to: "/trips",     icon: MapPin,          label: "Trips"   },
-  { to: "/explore",   icon: Globe,           label: "Explore" },
-  { to: "/profile",   icon: User,            label: "Profile" },
+  { to: "/",            icon: Home,            label: "Home"    },
+  { to: "/dashboard",   icon: LayoutDashboard, label: "Dash"    },
+  { to: "/ai-planner",  icon: Sparkles,        label: "AI Plan" },
+  { to: "/trips",       icon: MapPin,          label: "Trips"   },
+  { to: "/explore",     icon: Globe,           label: "Explore" },
+  { to: "/profile",     icon: User,            label: "Profile" },
 ];
 
 export function BottomTabBar() {

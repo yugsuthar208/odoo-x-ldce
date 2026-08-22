@@ -40,7 +40,8 @@ class Settings(BaseSettings):
     SUPABASE_PROJECT_ID: str = os.getenv("SUPABASE_PROJECT_ID", "aoosujaabsdmnzqothhw")
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://aoosujaabsdmnzqothhw.supabase.co")
     SUPABASE_PUBLISHABLE_KEY: str = os.getenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_ZbzM4M2DfhEvUuXA_0AvaQ_j9BlM-eL")
-    SUPABASE_SECRET_KEY: str = os.getenv("SUPABASE_SECRET_KEY", "sb_secret_DOnkU3w3X-TKgLjBs6DV5A_r84cT7Aq")
+    # Gemini AI Configuration
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
     # ML Model storage path
     BASE_DIR: Path = Path(__file__).resolve().parent.parent

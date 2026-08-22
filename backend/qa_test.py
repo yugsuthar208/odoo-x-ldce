@@ -58,7 +58,7 @@ users = cur.fetchall()
 print(f"Users: {[(u[1], u[2]) for u in users]}")
 cur.execute("SELECT id, title, user_id FROM trips;")
 trips = cur.fetchall()
-print(f"Trips: {[(t[1], t[0][:8]) for t in trips]}")
+print(f"Trips: {[(t[1].encode('ascii', 'ignore').decode('ascii'), t[0][:8]) for t in trips]}")
 conn.close()
 
 demo_user_exists = any(u[2] == 'demo@globetrotter.com' for u in users)
@@ -134,7 +134,7 @@ if ok:
     print(f"    Found {len(trip_list)} trips")
     if trip_list:
         TRIP_ID = trip_list[0].get("id")
-        print(f"    Using trip: {trip_list[0].get('title')} ({TRIP_ID})")
+        print(f"    Using trip: {str(trip_list[0].get('title')).encode('ascii', 'ignore').decode('ascii')} ({TRIP_ID})")
 
 # Create a new trip
 status, body = req("POST", "/trips", {

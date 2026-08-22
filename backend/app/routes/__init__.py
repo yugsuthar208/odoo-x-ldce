@@ -16,6 +16,7 @@ from app.routes.audit import router as audit_router
 from app.routes.oauth import router as oauth_router
 from app.routes.places import router as places_router
 from app.routes.transit import router as transit_router
+from app.routes.ai_planner import router as ai_planner_router
 
 __all__ = [
     "auth_router",
@@ -36,4 +37,5 @@ __all__ = [
     "oauth_router",
     "places_router",
     "transit_router",
+    "ai_planner_router",
 ]

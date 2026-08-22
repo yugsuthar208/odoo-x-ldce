@@ -13,6 +13,7 @@ import TripsPage from "./pages/TripsPage";
 import TripDetailPage from "./pages/TripDetailPage";
 import ExplorePage from "./pages/ExplorePage";
 import ProfilePage from "./pages/ProfilePage";
+import AITripPlannerPage from "./pages/AITripPlannerPage";
 
 import LandingPage from "./pages/LandingPage";
 
@@ -36,6 +37,7 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/ai-planner" element={<AITripPlannerPage />} />
             <Route path="/trips" element={<TripsPage />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/profile" element={<ProfilePage />} />
