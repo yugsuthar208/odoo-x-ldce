@@ -304,3 +304,6 @@ small { font-size: 0.8125rem; }
 }
 
 .leaflet-popup-tip-container { display: none; }
+.city-img-hover:hover {
+  transform: scale(1.05);
+}
