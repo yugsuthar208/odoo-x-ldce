@@ -36,27 +36,27 @@ export function TripCard({ trip }) {
 
   return (
     <Link to={`/trips/${trip.id}`} style={{ display: "block" }} className="stagger-item">
-      <div className="card card--hover" style={{ display: "flex", overflow: "hidden", cursor: "pointer" }}>
+      <div className="card card--hover" style={{ display: "flex", overflow: "hidden", cursor: "pointer", height: "100%" }}>
         {/* Left-aligned Thumbnail */}
-        <div style={{ width: 100, flexShrink: 0, background: "var(--border)" }}>
+        <div style={{ width: 120, flexShrink: 0, background: "var(--border)" }}>
           {thumbUrl && (
             <img src={thumbUrl} alt="Destination" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           )}
         </div>
         
         {/* Card Content */}
-        <div style={{ padding: 20, flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div style={{ padding: 24, flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           {/* Top row */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontWeight: 700, fontSize: "0.9375rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <p style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {route}
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, color: "var(--ink-soft)", fontSize: "0.8125rem" }}>
-                <Calendar size={12} />
-                <span>{trip.start_date} — {trip.end_date}</span>
-                <span style={{ opacity: 0.5 }}>·</span>
-                <span>{totalDays}d</span>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 6, color: "var(--ink-soft)", fontSize: "0.85rem" }}>
+                <Calendar size={14} />
+                <span style={{ whiteSpace: "nowrap" }}>{trip.start_date} &mdash; {trip.end_date}</span>
+                <span style={{ opacity: 0.5 }}>•</span>
+                <span style={{ fontWeight: 500 }}>{totalDays}d</span>
               </div>
             </div>
             <span className={`pill ${statusPill(trip.status)}`} style={{ flexShrink: 0, marginTop: 2 }}>

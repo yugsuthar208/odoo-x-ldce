@@ -165,7 +165,7 @@ export default function TripsPage() {
 
       {/* List */}
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: 24 }}>
           {[1,2,3,4,5,6].map((i) => <TripCardSkeleton key={i} />)}
         </div>
       ) : error ? (
@@ -191,7 +191,7 @@ export default function TripsPage() {
           )}
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: 24 }}>
           {filtered.map((trip) => <TripCard key={trip.id} trip={trip} />)}
         </div>
       )}

@@ -28,14 +28,16 @@ export default function CityCard({ city }) {
       <div style={{ padding: 24, flex: 1, display: "flex", flexDirection: "column", background: "#fff" }}>
         <h3 style={{ fontSize: "1.4rem", marginBottom: 6, fontWeight: 700, letterSpacing: "-0.5px" }}>{city.name}</h3>
         <p style={{ color: "var(--ink-soft)", display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: "0.9rem", fontWeight: 500 }}>
-          <MapPin size={16} /> {city.country} {city.region ? `• ${city.region}` : ""}
+          <MapPin size={14} /> {city.country} {city.region ? `• ${city.region}` : ""}
         </p>
         <p style={{ fontSize: "0.95rem", color: "rgba(0,0,0,0.6)", marginBottom: 20, flex: 1, lineHeight: 1.5 }}>
           {city.description || "A beautiful destination to explore."}
         </p>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.05)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#000", fontWeight: "700", fontSize: "1.1rem" }}>
-            <DollarSign size={18} /> {city.cost_index} <span style={{ fontSize: "0.8rem", color: "var(--ink-soft)", fontWeight: 500 }}>Cost Index</span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 4, color: "#000", fontWeight: "700", fontSize: "1.25rem", letterSpacing: "-0.5px" }}>
+            <span style={{ fontSize: "0.85rem", color: "var(--ink-soft)", fontWeight: 500, marginRight: "2px", letterSpacing: "normal" }}>Est.</span>
+            ${city.cost_index}
+            <span style={{ fontSize: "0.85rem", color: "var(--ink-soft)", fontWeight: 500, letterSpacing: "normal" }}>/ day</span>
           </div>
         </div>
       </div>
