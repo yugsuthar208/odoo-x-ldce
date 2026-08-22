@@ -1,171 +1,92 @@
-# GlobeTrotter Backend API 🌍✈️
+# ⚙️ Tripora Bharat — Backend API & Microservices
 
-GlobeTrotter is an enterprise-grade, production-ready backend for a personalized multi-city travel planning platform with **Scikit-Learn Machine Learning recommendations**, an **AI-powered rule-based itinerary generation engine**, **interactive map route distance calculation (Haversine)**, **schedule conflict detection**, **collaborator permissions**, **public share tokens**, and **comprehensive expense tracking**.
-
----
-
-## 🛠 Tech Stack
-
-- **Language:** Python 3.11+
-- **Framework:** FastAPI (High performance, OpenAPI 3.0, Swagger UI & ReDoc)
-- **Database:** PostgreSQL (with SQLite async fallback for local dev & testing)
-- **ORM:** SQLAlchemy 2.0 (Async with `asyncpg` / `aiosqlite`)
-- **Authentication:** JWT tokens (`python-jose` + `passlib` with `bcrypt`)
-- **Machine Learning & AI:** `scikit-learn`, `pandas`, `numpy`, `joblib`
-- **Validation:** Pydantic v2
-- **Database Migrations:** Alembic
-- **Server:** Uvicorn ASGI
+The backend service for **Tripora Bharat** provides authoritative trip calculations, multi-modal transit leg generation, DuckDuckGo live search scraping, dynamic room & group budget allocation, and Sentence-Transformer hybrid recommendations.
 
 ---
 
-## 🗄 Database Schema (11 Models)
+## 🛠 Backend Architecture
 
-1. **`users`**: id, name, email, password_hash, profile_photo, preferred_currency, language, created_at.
-2. **`cities`**: id, name, country, region, description, cost_index, popularity_score, latitude, longitude, image_url.
-3. **`trips`**: id, user_id, title, description, start_date, end_date, cover_photo, total_budget, currency, visibility (`private`/`public`/`friends`), status (`draft`/`upcoming`/`ongoing`/`completed`), created_at.
-4. **`trip_stops`**: id, trip_id, city_id, arrival_date, departure_date, stop_order, notes.
-5. **`activities`**: id, city_id, name, category (`sightseeing`, `food`, `adventure`, `shopping`, `nature`, `history`, `wellness`), description, estimated_cost, duration_hours, latitude, longitude, image_url.
-6. **`itinerary_items`**: id, trip_stop_id, activity_id, scheduled_date, start_time, end_time, custom_cost, notes, status (`planned`, `confirmed`, `cancelled`).
-7. **`expenses`**: id, trip_id, category (`transport`, `stay`, `food`, `activity`, `misc`), description, estimated_amount, actual_amount, currency, paid_by, created_at.
-8. **`budgets`**: id, trip_id, transport_cost, stay_cost, meals_cost, misc_cost, total_budget_limit.
-9. **`favorites`**: id, user_id, city_id, activity_id, created_at.
-10. **`shared_links`**: id, trip_id, share_token (`secrets.token_urlsafe(16)`), expires_at, created_at.
-11. **`trip_collaborators`**: id, trip_id, user_id, role (`editor`, `viewer`), joined_at.
+### 1. Authoritative Budget Engine (`app/services/budget_service.py`)
+Calculates single-source-of-truth totals in INR (₹) using explicit database relational records:
+$$\text{Total Cost} = \text{Stays Cost} + \text{Transit Cost} + \text{Activities Cost} + \text{Meals Cost} + \text{Misc Cost}$$
+
+Where:
+- $\text{Stays Cost} = \sum (\text{room\_night\_tariff} \times \text{nights} \times \lceil \text{num\_travelers} / 2 \rceil)$
+- $\text{Transit Cost} = \sum (\text{selected\_option.total\_estimated\_cost})$
+- $\text{Activities Cost} = \sum (\text{effective\_cost} \times \text{num\_travelers})$
+- $\text{Meals Cost} = \text{MEALS\_PER\_DAY\_INR} \times \text{num\_travelers} \times \text{trip\_days}$
+
+### 2. Multi-Modal Transit Generator (`app/services/transit_service.py`)
+Generates persisted `TransitLeg` and `TransitOption` rows for every consecutive stop sequence in a trip using distance math:
+- **Train (IRCTC)**: Sleeper Class (₹2/km), 3AC (₹4/km), 2AC (₹6/km), Vande Bharat (₹7.5/km).
+- **Flight**: Generated if distance > 400km (₹4,000 base + ₹5/km).
+- **Bus**: Volvo AC Seater/Sleeper (₹3.5/km).
+- **Cab**: Outstation SUV/Sedan (₹14/km).
+
+### 3. Live Search Scraper (`app/services/live_search_service.py`)
+Scrapes DuckDuckGo for authentic regional food, thalis, street food, heritage havelis, hostels, and resorts across India with fallback mock data when offline.
 
 ---
 
-## 🚀 Quickstart & Setup
+## 🗄 Relational Schema Overview
 
-### 1. Create and Activate Virtual Environment
+- **`users`**: User accounts and credentials.
+- **`trips`**: Trip metadata (`origin_city`, `num_travelers`, `budget_target`, `status`).
+- **`trip_stops`**: Destination stops ordered by `stop_order`.
+- **`stays` & `trip_stays`**: Hotel / hostel / homestay selections per stop.
+- **`transit_legs` & `transit_options`**: Multi-modal travel choices between origin and stops.
+- **`activities` & `itinerary_items`**: Catalog activities scheduled into stop dates.
+- **`expenses`**: Manual & extra expense logs.
+- **`recommendations` & `ml_predictions`**: User preference embeddings and similarity scores.
+
+---
+
+## 🔌 Core API Endpoints
+
+### 🔐 Authentication (`/api/v1/auth`)
+- `POST /auth/signup` — Create user account
+- `POST /auth/login` — Authenticate and receive JWT token
+
+### 🗺 Trips Workspace (`/api/v1/trips`)
+- `GET /trips` — List user trips
+- `POST /trips` — Create new trip (with origin city & traveler count)
+- `GET /trips/{id}` — Single Read-Model workspace endpoint (returns trip, stops, transit legs, stays, activities, & budget)
+- `PUT /trips/{id}` — Update trip metadata
+- `DELETE /trips/{id}` — Delete trip
+
+### 🚆 Transit Engine (`/api/v1/trips/{id}/transit`)
+- `GET /trips/{id}/transit` — Fetch persisted transit legs and multi-modal options
+- `PATCH /trips/{id}/transit/{leg_id}` — Select transit option and recalculate authoritative budget
+
+### 💰 Budget & Expenses (`/api/v1/trips/{id}/budget`)
+- `GET /trips/{id}/budget` — Authoritative budget breakdown in INR
+- `PUT /trips/{id}/budget` — Update budget target limit (`budget_target`)
+
+### 🔍 Live Food & Stays (`/api/v1/places`)
+- `GET /places/live-food?city=Udaipur&budget_tier=mid` — Scraping regional delicacies & thalis
+- `GET /places/live-stays?city=Udaipur&budget_tier=mid` — Scraping hostels, hotels & havelis
+
+---
+
+## 💻 Database Migrations (Alembic)
+
+To apply migrations against your Supabase PostgreSQL database:
+
 ```bash
-python -m venv venv
-# Windows
-.\venv\Scripts\Activate.ps1
-# macOS/Linux
-source venv/bin/activate
+alembic upgrade head
 ```
 
-### 2. Install Dependencies
+To create a new migration after updating SQLAlchemy models:
 ```bash
-pip install -r requirements.txt
-```
-
-### 3. Configure Environment Variables
-Create a `.env` file in `backend/`:
-```env
-PROJECT_NAME=GlobeTrotter
-DATABASE_URL=sqlite+aiosqlite:///./globetrotter.db
-SECRET_KEY=super_secret_jwt_key_globetrotter_2026_change_in_prod
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_DAYS=7
-MEALS_PER_DAY_USD=25.0
-DEFAULT_CITY_COST_INDEX=80.0
-```
-
-### 4. Train ML Models & Seed Database
-```bash
-# Train ML linear regression budget model
-python app/ml/train.py
-
-# Populate 20 global cities, 100 activities, demo user, and 2 full sample trips
-python seed.py
-```
-
-### 5. Run the Server
-```bash
-python -m uvicorn app.main:app --port 8000 --reload
-```
-- **Interactive Swagger Docs:** `http://127.0.0.1:8000/docs`
-- **ReDoc Documentation:** `http://127.0.0.1:8000/redoc`
-- **Health Check:** `http://127.0.0.1:8000/health`
-
-### 6. Run Automated Test Suite (26 Tests)
-```bash
-python test_api.py
+alembic revision --autogenerate -m "describe changes"
 ```
 
 ---
 
-## 📌 API Endpoints Reference
+## 🧪 Seeding Database
 
-### 🔐 Authentication & Users
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/auth/signup` | Register new user account |
-| `POST` | `/api/auth/login` | Login and obtain JWT token |
-| `POST` | `/api/auth/forgot-password` | Generate password reset token |
-| `GET` | `/api/users/me` | Get current user profile |
-| `PUT` | `/api/users/me` | Update name, profile photo, preferred currency |
-| `DELETE` | `/api/users/me` | Delete account and all associated trips |
+To seed complete Indian travel data (cities, activities, cost indices, and sample trips):
 
-### 🏙 Destination Cities & Catalog
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/cities` | Search and filter cities (`?search=&region=&country=`) |
-| `GET` | `/api/cities/{id}` | Get city details with its catalog of activities |
-| `GET` | `/api/cities/{city_id}/activities` | Filter activities (`?category=&max_cost=&max_duration=`) |
-| `GET` | `/api/activities/{id}` | Get single activity details |
-| `POST` | `/api/activities` | Add a new activity catalog item |
-
-### 🗺 Trips & Itinerary Planning
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/trips` | List trips for current user (`?status=&search=`) |
-| `POST` | `/api/trips` | Create a new trip |
-| `GET` | `/api/trips/{id}` | Get full trip details with stops & budget |
-| `PUT` | `/api/trips/{id}` | Update trip metadata |
-| `DELETE` | `/api/trips/{id}` | Delete trip (owner only) |
-| `POST` | `/api/trips/{id}/duplicate` | Copy trip as a new draft |
-| `GET` | `/api/trips/public/{id}` | Public read-only trip overview |
-| `GET` | `/api/trips/{id}/map-route` | Route coordinates & Haversine distance in km |
-
-### 🛑 Stops & Schedule Management
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/trips/{id}/stops` | Append a destination stop to trip |
-| `PUT` | `/api/trips/{id}/stops/{stop_id}` | Edit stop dates, order, or notes |
-| `DELETE` | `/api/trips/{id}/stops/{stop_id}` | Remove stop from trip |
-| `PUT` | `/api/trips/{id}/stops/reorder` | Bulk reorder stops sequence |
-| `POST` | `/api/stops/{stop_id}/items` | Assign activity with date and time slots |
-| `PUT` | `/api/itinerary-items/{item_id}` | Edit scheduled activity item |
-| `DELETE` | `/api/itinerary-items/{item_id}` | Delete scheduled activity item |
-| `GET` | `/api/trips/{id}/itinerary` | Day-wise grouped itinerary schedule |
-| `GET` | `/api/trips/{id}/conflicts` | Detect overlapping schedule conflicts |
-
-### 🤖 AI Itinerary Generator & ML Engine
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/trips/{id}/generate-itinerary` | Rule-based schedule generator with pace and budget constraints |
-| `GET` | `/api/recommend/cities` | Content-based cosine similarity city recommender |
-| `GET` | `/api/recommend/budget/{trip_id}` | Linear regression budget predictor vs actual cost |
-
-### 💰 Budgets & Expenses
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/trips/{id}/budget` | 12-step budget forecast and breakdown |
-| `PUT` | `/api/trips/{id}/budget` | Update manual budget fields |
-| `POST` | `/api/trips/{id}/expenses` | Log trip expense (estimated & actual) |
-| `GET` | `/api/trips/{id}/expenses` | List all expenses for a trip |
-| `PUT` | `/api/expenses/{id}` | Update expense |
-| `DELETE` | `/api/expenses/{id}` | Delete expense |
-
-### 🔗 Public Sharing, Collaboration & Favorites
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/trips/{id}/share` | Generate secure share link token |
-| `GET` | `/api/shared/{token}` | Public read-only view (sanitized) |
-| `POST` | `/api/shared/{token}/copy` | Copy public shared trip to user account |
-| `POST` | `/api/trips/{id}/collaborators` | Add editor/viewer collaborator (owner only) |
-| `GET` | `/api/trips/{id}/collaborators` | List collaborators |
-| `DELETE` | `/api/trips/{id}/collaborators/{user_id}` | Remove collaborator |
-| `POST` | `/api/favorites` | Bookmark city or activity |
-| `GET` | `/api/favorites` | List all bookmarked items |
-| `DELETE` | `/api/favorites/{id}` | Remove bookmark |
-
----
-
-## 🧪 Demo Account
-
-- **Email:** `demo@globetrotter.com`
-- **Password:** `demo1234`
-- Preloaded with **"Europe Explorer"** and **"Asia Adventure"** trips.
+```bash
+python seed_india_complete.py
+```
