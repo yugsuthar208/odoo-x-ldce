@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "GlobeTrotter"
     API_V1_STR: str = "/api"
     
+    # CORS Configuration
+    BACKEND_CORS_ORIGINS: list[str] | str = ["*"]
+    
     # Database configuration (Defaults to PostgreSQL asyncpg, falls back to SQLite for local tests)
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
