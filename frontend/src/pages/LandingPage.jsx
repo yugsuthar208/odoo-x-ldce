@@ -262,39 +262,73 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
-      {/* NEW: Travel Styles Section */}
-      <motion.section 
-        className="lp-styles-section"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={fadeUp}
-      >
-        <div className="lp-section-header">
-          <h2>Find Your Vibe</h2>
-          <p style={{ opacity: 0.7, marginTop: '8px' }}>Explore itineraries curated by travel style.</p>
-        </div>
-        
-        <div className="lp-styles-grid">
-          {[
-            { name: "Adventure", img: "https://images.unsplash.com/photo-1522199755839-a2bacb67c546?q=80&w=800&auto=format&fit=crop" },
-            { name: "Luxury", img: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=800&auto=format&fit=crop" },
-            { name: "Cultural", img: "https://images.unsplash.com/photo-1518398046578-8cca57782e17?q=80&w=800&auto=format&fit=crop" },
-            { name: "Relaxation", img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=800&auto=format&fit=crop" }
-          ].map((style, i) => (
-            <motion.div 
-              key={i} 
-              className="lp-style-card hover-lift"
-              whileHover={{ y: -10, scale: 1.02 }}
-            >
-              <img src={style.img} alt={style.name} />
-              <div className="lp-style-overlay">
-                <h3>{style.name}</h3>
+      {/* NEW: Travel Styles Section (Sticky Scroll Layout) */}
+      <section className="vibe-section" style={{ padding: "120px 5%", maxWidth: "1400px", margin: "0 auto" }}>
+        <div className="vibe-container" style={{ display: "flex", alignItems: "flex-start", gap: "80px", position: "relative" }}>
+          
+          <div className="vibe-text" style={{ flex: 1, position: "sticky", top: "25vh" }}>
+            <h2 style={{ fontSize: "4.5rem", letterSpacing: "-2px", marginBottom: "24px", lineHeight: 1.1 }}>
+              Curate your <br /> perfect <span className="gradient-text">vibe.</span>
+            </h2>
+            <p style={{ fontSize: "1.2rem", color: "var(--ink-soft)", lineHeight: 1.6, marginBottom: "40px", maxWidth: "450px" }}>
+              Our AI engine deeply understands your unique travel persona. As you scroll, explore the different aesthetic and experiential modalities we offer to perfectly match your state of mind.
+            </p>
+            
+            <div style={{ display: "flex", gap: "20px" }}>
+              <div style={{ padding: "24px", background: "var(--surface)", borderRadius: "20px", flex: 1, border: "1px solid rgba(0,0,0,0.03)" }}>
+                <h4 style={{ fontSize: "2.5rem", marginBottom: "4px", fontWeight: 600 }}>4+</h4>
+                <p style={{ fontSize: "1rem", color: "var(--ink-soft)" }}>Curated Modalities</p>
               </div>
-            </motion.div>
-          ))}
+              <div style={{ padding: "24px", background: "var(--surface)", borderRadius: "20px", flex: 1, border: "1px solid rgba(0,0,0,0.03)" }}>
+                <h4 style={{ fontSize: "2.5rem", marginBottom: "4px", fontWeight: 600 }}>100%</h4>
+                <p style={{ fontSize: "1rem", color: "var(--ink-soft)" }}>Vibe-Matched</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="vibe-cards" style={{ flex: 1.2, display: "flex", flexDirection: "column", gap: "60px", paddingBottom: "10vh" }}>
+            {[
+              { name: "Adventure", img: "https://images.unsplash.com/photo-1522199755839-a2bacb67c546?q=80&w=800&auto=format&fit=crop", desc: "For the thrill-seekers." },
+              { name: "Luxury", img: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=800&auto=format&fit=crop", desc: "Five-star everything." },
+              { name: "Cultural", img: "https://images.unsplash.com/photo-1518398046578-8cca57782e17?q=80&w=800&auto=format&fit=crop", desc: "Immerse in the history." },
+              { name: "Relaxation", img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=800&auto=format&fit=crop", desc: "Unplug and unwind." }
+            ].map((style, i) => (
+              <motion.div 
+                key={i} 
+                className="vibe-card-sticky hover-lift"
+                style={{ 
+                  position: "sticky", 
+                  top: `calc(15vh + ${i * 30}px)`, 
+                  height: "500px", 
+                  borderRadius: "32px", 
+                  overflow: "hidden",
+                  boxShadow: "0 30px 60px rgba(0,0,0,0.15)",
+                  border: "1px solid rgba(255,255,255,0.4)"
+                }}
+                initial={{ opacity: 0, y: 150 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                viewport={{ once: true, margin: "-50px" }}
+                whileHover={{ y: -5 }}
+              >
+                <img src={style.img} alt={style.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ 
+                  position: "absolute", 
+                  inset: 0, 
+                  background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)", 
+                  display: "flex", 
+                  flexDirection: "column",
+                  justifyContent: "flex-end", 
+                  padding: "48px" 
+                }}>
+                  <h3 style={{ color: "#fff", fontSize: "3.5rem", margin: "0 0 8px 0", fontWeight: 600, letterSpacing: "-1px" }}>{style.name}</h3>
+                  <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "1.2rem", margin: 0 }}>{style.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* AI Itinerary Magic Section */}
       <motion.section 
