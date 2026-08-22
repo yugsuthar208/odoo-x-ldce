@@ -57,6 +57,7 @@ function TiltCard({ children }) {
 
 // --- Main Page Component ---
 export default function LandingPage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const navigate = useNavigate();
   const { scrollY } = useScroll();
   
@@ -100,9 +101,20 @@ export default function LandingPage() {
         <div className="lp-nav-right">
           <Link to="/login" className="lp-lang-btn hover-link" style={{ textDecoration: 'none' }}>Log In</Link>
           <Link to="/signup" className="lp-btn-talk glow-on-hover">Start Planning</Link>
-          <button className="lp-menu-btn">
-            <Menu size={20} />
-          </button>
+          <div style={{ position: "relative" }}>
+            <button className="lp-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <Menu size={20} />
+            </button>
+            {isMobileMenuOpen && (
+              <div className="lp-mobile-menu-dropdown">
+                <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)}>Features</a>
+                <a href="#destinations" onClick={() => setIsMobileMenuOpen(false)}>Destinations</a>
+                <a href="#ai-magic" onClick={() => setIsMobileMenuOpen(false)}>AI Magic</a>
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>Log In</Link>
+                <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>Start Planning</Link>
+              </div>
+            )}
+          </div>
         </div>
       </motion.nav>
 
@@ -188,19 +200,24 @@ export default function LandingPage() {
         transition={{ delay: 1, duration: 0.8 }}
       >
         <form onSubmit={handleSearchSubmit} className="lp-search-bar glass-panel">
-          <div className="lp-search-field hover-glow">
+          <div className="lp-search-field hover-glow" style={{ cursor: "text" }}>
             <MapPin size={20} className="lp-field-icon text-accent" />
-            <div className="lp-field-text">
-              <label>Search cities...</label>
+            <div className="lp-field-text" style={{ flex: 1 }}>
+              <input type="text" placeholder="Search cities..." className="lp-search-input" />
             </div>
           </div>
           <div className="lp-search-divider"></div>
-          <div className="lp-search-field hover-glow">
+          <div className="lp-search-field hover-glow" style={{ cursor: "pointer" }}>
             <Globe size={20} className="lp-field-icon text-accent" />
-            <div className="lp-field-text">
-              <label>Region (All)</label>
+            <div className="lp-field-text" style={{ flex: 1 }}>
+              <select className="lp-search-input" style={{ appearance: "none", cursor: "pointer" }}>
+                <option value="">Region (All)</option>
+                <option value="europe">Europe</option>
+                <option value="asia">Asia</option>
+                <option value="americas">Americas</option>
+              </select>
             </div>
-            <ChevronDown size={16} className="lp-chevron" />
+            <ChevronDown size={16} className="lp-chevron" style={{ pointerEvents: "none" }} />
           </div>
           <button type="submit" className="lp-search-submit glow-on-hover">
             <Search size={20} color="#fff" />
