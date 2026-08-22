@@ -23,17 +23,17 @@ export function StopCard({ stop, onClick, isSelected }) {
         <div style={{
           width: 48, height: 48, borderRadius: "var(--radius-input)",
           background: "var(--surface)", display: "flex", alignItems: "center",
-          justifyContent: "center", overflow: "hidden"
+          justifyContent: "center", overflow: "hidden", flexShrink: 0
         }}>
           {stop.city?.image_url ? (
             <img src={stop.city.image_url} alt={stop.city.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <span style={{ fontWeight: 700, color: "var(--ink-soft)" }}>{stop.stop_order}</span>
+            <span style={{ fontWeight: 700, color: "var(--ink-soft)" }}>{(stop.stop_order ?? 0) + 1}</span>
           )}
         </div>
         
         <div>
-          <h4 style={{ fontSize: "0.9375rem", marginBottom: 2 }}>{stop.city?.name}</h4>
+          <h4 style={{ fontSize: "0.9375rem", marginBottom: 2 }}>{stop.city?.name || stop.city_name || "Destination"}</h4>
           <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--ink-soft)", fontSize: "0.8125rem" }}>
             <CalendarDays size={12} />
             <span>{days} {days === 1 ? "day" : "days"}</span>

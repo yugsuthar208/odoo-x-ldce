@@ -134,10 +134,26 @@ export default function TripDetailPage() {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         
         {/* Left Sidebar (Stops & Tabs) */}
-        <div style={{ width: 440, background: "var(--white)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{
+          width: activeTab === "itinerary" ? 460 : 540,
+          maxWidth: "100%",
+          background: "var(--white)",
+          borderRight: "1px solid var(--border)",
+          display: "flex",
+          flexDirection: "column",
+          flexShrink: 0,
+          transition: "width 0.2s ease"
+        }}>
           
           {/* Tab Navigation */}
-          <div style={{ display: "flex", padding: "16px 16px 0", gap: 16, borderBottom: "1px solid var(--border)", overflowX: "auto" }}>
+          <div style={{
+            display: "flex",
+            padding: "14px 16px 0",
+            gap: 16,
+            borderBottom: "1px solid var(--border)",
+            overflowX: "auto",
+            scrollbarWidth: "none"
+          }}>
             {TABS.map(t => {
               const Icon = t.icon;
               const active = activeTab === t.id;
@@ -146,19 +162,26 @@ export default function TripDetailPage() {
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
                   style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    padding: "0 0 12px", borderBottom: active ? "2px solid var(--ink)" : "2px solid transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "0 0 12px",
+                    borderBottom: active ? "2.5px solid var(--ink)" : "2.5px solid transparent",
                     color: active ? "var(--ink)" : "var(--ink-soft)",
-                    fontWeight: active ? 600 : 500, fontSize: "0.8125rem", whiteSpace: "nowrap"
+                    fontWeight: active ? 700 : 500,
+                    fontSize: "0.85rem",
+                    whiteSpace: "nowrap",
+                    transition: "all var(--t-fast)",
+                    cursor: "pointer"
                   }}
                 >
-                  <Icon size={15} /> {t.label}
+                  <Icon size={16} color={active ? "var(--ink)" : "var(--ink-soft)"} /> {t.label}
                 </button>
               );
             })}
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px" }}>
             {activeTab === "itinerary" && (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>

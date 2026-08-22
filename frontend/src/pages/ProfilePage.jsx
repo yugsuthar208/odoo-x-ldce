@@ -3,20 +3,20 @@ import { useAuth } from "../context/AuthContext";
 import { User, Mail, DollarSign, Globe, Check, LogOut, Shield } from "lucide-react";
 import { useToast } from "../components/common/Toast";
 
-const CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY", "CAD", "AUD", "SGD", "CHF"];
+const CURRENCIES = ["INR", "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "SGD", "CHF"];
 
 export default function ProfilePage() {
   const { user, logout, updateProfile } = useAuth();
   const { addToast } = useToast();
 
   const [name, setName] = useState("");
-  const [preferredCurrency, setPreferredCurrency] = useState("USD");
+  const [preferredCurrency, setPreferredCurrency] = useState("INR");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
       setName(user.name || user.full_name || "");
-      setPreferredCurrency(user.preferred_currency || "USD");
+      setPreferredCurrency(user.preferred_currency || "INR");
     }
   }, [user]);
 

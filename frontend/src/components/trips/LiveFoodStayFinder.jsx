@@ -4,13 +4,13 @@ import {
   Utensils, 
   Hotel, 
   Star, 
-  Search, 
   Sparkles, 
-  ExternalLink, 
   Tag, 
   MapPin, 
-  AlertCircle 
+  AlertCircle,
+  Compass
 } from 'lucide-react';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 export default function LiveFoodStayFinder({ cityName = 'Goa' }) {
   const [activeTab, setActiveTab] = useState('food'); // 'food' or 'stay'
@@ -51,131 +51,229 @@ export default function LiveFoodStayFinder({ cityName = 'Goa' }) {
 
   const results = activeTab === 'food' ? foodResults : stayResults;
 
+  const budgetTiers = [
+    { id: 'budget', label: 'Budget' },
+    { id: 'mid', label: 'Mid-Range' },
+    { id: 'luxury', label: 'Luxury' }
+  ];
+
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl space-y-6">
-      {/* Header & Mode Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Live DuckDuckGo Travel Discovery
-            </span>
-          </div>
-          <h2 className="text-xl font-bold text-white mt-1">
-            Local Food & Stays in <span className="text-amber-400">{cityName}</span>
-          </h2>
-          <p className="text-sm text-neutral-400">
-            Real-time recommendations for legendary regional thalis, iconic dhabas, hostels & heritage stays.
-          </p>
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Header */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <span className="pill" style={{ background: "rgba(195, 248, 50, 0.2)", color: "var(--ink)", border: "1px solid rgba(195, 248, 50, 0.5)" }}>
+            <Sparkles size={12} /> Live Discovery
+          </span>
+        </div>
+        <h2 style={{ fontSize: "1.35rem", fontWeight: 700, margin: "6px 0 4px" }}>
+          Local Food & Stays in <span style={{ color: "var(--ink)" }}>{cityName}</span>
+        </h2>
+        <p style={{ color: "var(--ink-soft)", fontSize: "0.875rem" }}>
+          Curated authentic recommendations for legendary regional thalis, iconic dhabas, hostels and heritage stays.
+        </p>
+      </div>
+
+      {/* Control Switchers Bar */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
+        {/* Category Tabs */}
+        <div style={{
+          display: "flex",
+          gap: 4,
+          background: "var(--surface)",
+          padding: 4,
+          borderRadius: "var(--radius-pill)",
+          border: "1px solid var(--border)"
+        }}>
+          <button
+            onClick={() => setActiveTab('food')}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 14px",
+              borderRadius: "var(--radius-pill)",
+              fontSize: "0.8125rem",
+              fontWeight: activeTab === 'food' ? 700 : 500,
+              background: activeTab === 'food' ? "var(--ink)" : "transparent",
+              color: activeTab === 'food' ? "var(--accent)" : "var(--ink-soft)",
+              transition: "all var(--t-fast)",
+              cursor: "pointer"
+            }}
+          >
+            <Utensils size={14} /> Food & Dining
+          </button>
+          <button
+            onClick={() => setActiveTab('stay')}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 14px",
+              borderRadius: "var(--radius-pill)",
+              fontSize: "0.8125rem",
+              fontWeight: activeTab === 'stay' ? 700 : 500,
+              background: activeTab === 'stay' ? "var(--ink)" : "transparent",
+              color: activeTab === 'stay' ? "var(--accent)" : "var(--ink-soft)",
+              transition: "all var(--t-fast)",
+              cursor: "pointer"
+            }}
+          >
+            <Hotel size={14} /> Stays & Hostels
+          </button>
         </div>
 
-        {/* Tab & Budget Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Food / Stay Tab Buttons */}
-          <div className="flex bg-neutral-950 p-1 rounded-xl border border-neutral-800">
-            <button
-              onClick={() => setActiveTab('food')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'food'
-                  ? 'bg-amber-500 text-black shadow-md'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Utensils className="w-3.5 h-3.5" />
-              <span>Food & Delicacies</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('stay')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'stay'
-                  ? 'bg-amber-500 text-black shadow-md'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Hotel className="w-3.5 h-3.5" />
-              <span>Stays & Hostels</span>
-            </button>
-          </div>
-
-          {/* Budget Tier Selector */}
-          <div className="flex bg-neutral-950 p-1 rounded-xl border border-neutral-800 text-xs">
-            {['budget', 'mid', 'luxury'].map((tier) => (
+        {/* Budget Selector */}
+        <div style={{
+          display: "flex",
+          gap: 4,
+          background: "var(--surface)",
+          padding: 4,
+          borderRadius: "var(--radius-pill)",
+          border: "1px solid var(--border)"
+        }}>
+          {budgetTiers.map((tier) => {
+            const active = budgetTier === tier.id;
+            return (
               <button
-                key={tier}
-                onClick={() => setBudgetTier(tier)}
-                className={`px-3 py-1.5 rounded-lg font-medium capitalize transition cursor-pointer ${
-                  budgetTier === tier
-                    ? 'bg-neutral-800 text-amber-400 font-semibold'
-                    : 'text-neutral-400 hover:text-neutral-200'
-                }`}
+                key={tier.id}
+                onClick={() => setBudgetTier(tier.id)}
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "var(--radius-pill)",
+                  fontSize: "0.75rem",
+                  fontWeight: active ? 700 : 500,
+                  background: active ? "var(--white)" : "transparent",
+                  color: active ? "var(--ink)" : "var(--ink-soft)",
+                  boxShadow: active ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                  transition: "all var(--t-fast)",
+                  cursor: "pointer"
+                }}
               >
-                {tier}
+                {tier.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Loading & Error */}
+      {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center py-12 text-neutral-400 gap-3">
-          <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          <span>Discovering authentic {activeTab === 'food' ? 'food spots' : 'stays'} in {cityName}...</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "48px 0" }}>
+          <LoadingSpinner size={32} />
+          <p style={{ color: "var(--ink-soft)", fontSize: "0.875rem" }}>
+            Discovering authentic {activeTab === 'food' ? 'food spots' : 'stays'} in {cityName}...
+          </p>
         </div>
       )}
 
-      {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-950/40 border border-red-800/60 rounded-xl text-red-300 text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
+      {/* Error State */}
+      {error && !loading && (
+        <div className="card" style={{ padding: 16, border: "1px solid var(--danger)", background: "rgba(229, 72, 77, 0.05)", display: "flex", alignItems: "center", gap: 10, color: "var(--danger)" }}>
+          <AlertCircle size={18} />
+          <span style={{ fontSize: "0.875rem" }}>{error}</span>
         </div>
       )}
 
       {/* Results Grid */}
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {results.map((item, idx) => (
-            <div
-              key={idx}
-              className="bg-neutral-950 border border-neutral-800 hover:border-amber-500/40 rounded-xl p-4.5 flex flex-col justify-between transition group hover:shadow-lg"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-[11px] font-medium text-amber-400/90 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                    {item.type}
-                  </span>
-                  <div className="flex items-center gap-1 text-xs text-amber-400 bg-neutral-900 px-2 py-0.5 rounded-md border border-neutral-800">
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    <span className="font-bold">{item.rating || '4.7'}</span>
-                  </div>
-                </div>
-
-                <h3 className="text-base font-bold text-white mt-2.5 group-hover:text-amber-400 transition">
-                  {item.title}
-                </h3>
-
-                <p className="text-xs text-neutral-400 mt-2 leading-relaxed line-clamp-3">
-                  {item.highlight}
-                </p>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between">
+        results.length === 0 ? (
+          <div className="card" style={{ padding: 36, textAlign: "center", background: "var(--surface)" }}>
+            <Compass size={32} color="var(--ink-soft)" style={{ margin: "0 auto 12px" }} />
+            <h4 style={{ marginBottom: 4 }}>No recommendations found</h4>
+            <p style={{ color: "var(--ink-soft)", fontSize: "0.875rem" }}>
+              Try selecting a different budget tier or destination city.
+            </p>
+          </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: 14
+          }}>
+            {results.map((item, idx) => (
+              <div
+                key={idx}
+                className="card card--hover"
+                style={{
+                  padding: 16,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  borderRadius: "var(--radius-card)",
+                  background: "var(--white)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "var(--shadow-card)",
+                  transition: "all var(--t-fast)"
+                }}
+              >
                 <div>
-                  <span className="text-[10px] text-neutral-500 uppercase font-semibold block">
-                    Estimated Cost
-                  </span>
-                  <span className="text-sm font-bold text-amber-400">
-                    {item.price_inr}
-                  </span>
+                  {/* Top Bar: Type Pill + Rating */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <span className="pill" style={{ background: "rgba(195, 248, 50, 0.2)", color: "var(--ink)", fontSize: "0.6875rem", fontWeight: 700 }}>
+                      {item.type || (activeTab === 'food' ? 'Food & Dining' : 'Stay')}
+                    </span>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      color: "#b45309",
+                      background: "#fef3c7",
+                      padding: "2px 8px",
+                      borderRadius: "var(--radius-pill)"
+                    }}>
+                      <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                      <span>{item.rating || '4.8'}</span>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 style={{ fontSize: "0.95rem", fontWeight: 700, margin: "0 0 6px", color: "var(--ink)" }}>
+                    {item.title}
+                  </h3>
+
+                  {/* Description / Highlight */}
+                  <p style={{
+                    fontSize: "0.8125rem",
+                    color: "var(--ink-soft)",
+                    lineHeight: 1.5,
+                    marginBottom: 12,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden"
+                  }}>
+                    {item.highlight || item.description}
+                  </p>
                 </div>
 
-                <span className="text-[10px] text-neutral-400 bg-neutral-900 px-2 py-1 rounded border border-neutral-800">
-                  {item.source || 'DuckDuckGo Verified'}
-                </span>
+                {/* Bottom Bar: Estimated Price & Verification Source */}
+                <div style={{
+                  paddingTop: 12,
+                  borderTop: "1px solid var(--border)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between"
+                }}>
+                  <div>
+                    <span style={{ fontSize: "0.6875rem", color: "var(--ink-soft)", display: "block", textTransform: "uppercase", fontWeight: 600 }}>
+                      Estimated Cost
+                    </span>
+                    <span style={{ fontSize: "0.9375rem", fontWeight: 800, color: "var(--ink)" }}>
+                      {item.price_inr || "₹450 / person"}
+                    </span>
+                  </div>
+
+                  <span className="pill" style={{ background: "var(--surface)", color: "var(--ink-soft)", fontSize: "0.6875rem", border: "1px solid var(--border)" }}>
+                    {item.source || 'Verified'}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
     </div>
   );

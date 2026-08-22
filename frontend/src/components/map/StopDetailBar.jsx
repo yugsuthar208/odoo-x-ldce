@@ -19,7 +19,7 @@ export function StopDetailBar({ selectedStop, nextStop, onAddActivity }) {
       
       <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
         <div>
-          <h3 style={{ fontSize: "1.125rem", marginBottom: 2 }}>{selectedStop.city?.name}</h3>
+          <h3 style={{ fontSize: "1.125rem", marginBottom: 2 }}>{selectedStop.city?.name || selectedStop.city_name || "Destination"}</h3>
           <p style={{ fontSize: "0.8125rem", color: "var(--ink-soft)" }}>
             {selectedStop.arrival_date} → {selectedStop.departure_date}
           </p>
@@ -31,7 +31,7 @@ export function StopDetailBar({ selectedStop, nextStop, onAddActivity }) {
           </div>
           {nextStop && (
             <div className="pill" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--ink)" }}>
-              <Navigation size={14} color="var(--accent)" /> To {nextStop.city?.name}
+              <Navigation size={14} color="var(--accent)" /> To {nextStop.city?.name || nextStop.city_name || "Next Stop"}
             </div>
           )}
         </div>

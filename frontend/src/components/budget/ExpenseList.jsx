@@ -111,7 +111,7 @@ export default function ExpenseList({ tripId, onExpenseAdded }) {
                   </td>
                   <td style={{ padding: "12px 0", fontWeight: "500" }}>{exp.description}</td>
                   <td style={{ padding: "12px 0", textTransform: "capitalize", fontSize: "0.875rem" }}>{exp.category}</td>
-                  <td style={{ padding: "12px 0", textAlign: "right", fontWeight: "600" }}>${exp.estimated_amount.toFixed(2)}</td>
+                  <td style={{ padding: "12px 0", textAlign: "right", fontWeight: "600" }}>₹{Number(exp.estimated_amount || 0).toLocaleString('en-IN')}</td>
                   <td style={{ padding: "12px 0", textAlign: "right" }}>
                     <button className="btn btn--icon btn--ghost btn--sm" onClick={() => handleDelete(exp.id)}>
                       <Trash2 size={16} color="var(--error-main)" />
