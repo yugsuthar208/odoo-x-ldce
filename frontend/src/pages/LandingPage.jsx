@@ -262,7 +262,41 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
-      {/* NEW: AI Itinerary Magic Section */}
+      {/* NEW: Travel Styles Section */}
+      <motion.section 
+        className="lp-styles-section"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        variants={fadeUp}
+      >
+        <div className="lp-section-header">
+          <h2>Find Your Vibe</h2>
+          <p style={{ opacity: 0.7, marginTop: '8px' }}>Explore itineraries curated by travel style.</p>
+        </div>
+        
+        <div className="lp-styles-grid">
+          {[
+            { name: "Adventure", img: "https://images.unsplash.com/photo-1522199755839-a2bacb67c546?q=80&w=800&auto=format&fit=crop" },
+            { name: "Luxury", img: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=800&auto=format&fit=crop" },
+            { name: "Cultural", img: "https://images.unsplash.com/photo-1518398046578-8cca57782e17?q=80&w=800&auto=format&fit=crop" },
+            { name: "Relaxation", img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=800&auto=format&fit=crop" }
+          ].map((style, i) => (
+            <motion.div 
+              key={i} 
+              className="lp-style-card hover-lift"
+              whileHover={{ y: -10, scale: 1.02 }}
+            >
+              <img src={style.img} alt={style.name} />
+              <div className="lp-style-overlay">
+                <h3>{style.name}</h3>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* AI Itinerary Magic Section */}
       <motion.section 
         className="lp-ai-magic" 
         id="ai-magic"
@@ -273,18 +307,18 @@ export default function LandingPage() {
       >
         <div className="lp-ai-container glass-panel-dark">
           <div className="lp-ai-content">
-            <Sparkles size={32} className="text-accent float-animation" />
-            <h2 className="gradient-text">Intelligent Itinerary Generation</h2>
+            <Sparkles size={32} className="text-accent float-animation" style={{ color: '#fff' }} />
+            <h2 className="gradient-text-light">Intelligent Itinerary Generation</h2>
             <p>Our machine learning engine builds personalized day-by-day plans in seconds. We optimize travel routes, predict precise budget requirements, and match activities exactly to your vibe.</p>
             
             <div className="lp-ai-stats">
               <motion.div className="ai-stat-box" whileHover={{ scale: 1.05 }}>
-                <Map className="text-accent mb-2" size={24}/>
+                <Map className="mb-2" size={24} color="#fff" />
                 <h4>Smart Routing</h4>
                 <span>Eliminates zigzagging across the city</span>
               </motion.div>
               <motion.div className="ai-stat-box" whileHover={{ scale: 1.05 }}>
-                <CalendarClock className="text-accent mb-2" size={24}/>
+                <CalendarClock className="mb-2" size={24} color="#fff" />
                 <h4>Pacing Engine</h4>
                 <span>Ensures you're never rushed or bored</span>
               </motion.div>

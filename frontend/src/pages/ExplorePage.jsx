@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Map } from "lucide-react";
+import { Search, Map, Compass } from "lucide-react";
 import { cityService } from "../services/cityService";
 import CityCard from "../components/cities/CityCard";
+import { motion } from "framer-motion";
 
 const REGIONS = ["All", "Europe", "Asia", "North America", "South America", "Africa", "Oceania", "Middle East"];
 
@@ -13,10 +14,8 @@ export default function ExplorePage() {
 
   useEffect(() => {
     loadCities();
-  }, [region]); // Re-load when region changes
+  }, [region]);
 
-  // Use a debounce or just load on submit/enter for search, 
-  // but for simplicity let's reload on blur or button click
   const loadCities = async () => {
     setLoading(true);
     try {
@@ -37,35 +36,66 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="page fade-in">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h1>Explore Destinations</h1>
-        <Map className="text-primary" size={28} />
+    <motion.div 
+      className="page"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+        <div>
+          <h1 style={{ fontSize: "2.5rem", letterSpacing: "-1px", marginBottom: "8px" }}>Explore Destinations</h1>
+          <p style={{ color: "var(--ink-soft)", fontSize: "1.1rem" }}>Find your next adventure from our curated list of global cities.</p>
+        </div>
       </div>
 
-      <div className="card" style={{ padding: 16, marginBottom: 24, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <form onSubmit={handleSearch} style={{ display: "flex", gap: 8, flex: 1, minWidth: 250 }}>
-          <div className="input-group" style={{ flex: 1 }}>
-            <Search size={18} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--ink-soft)" }} />
-            <input 
-              type="text" 
-              className="input" 
-              placeholder="Search cities..." 
-              style={{ paddingLeft: 36 }}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="btn btn--primary">Search</button>
+      <div style={{
+        background: "var(--white)",
+        padding: "24px",
+        borderRadius: "24px",
+        boxShadow: "0 10px 40px rgba(0,0,0,0.05)",
+        marginBottom: "48px",
+        display: "flex",
+        gap: "16px",
+        alignItems: "center",
+        flexWrap: "wrap",
+        border: "1px solid rgba(0,0,0,0.03)"
+      }}>
+        <form onSubmit={handleSearch} style={{ flex: 1, minWidth: 300, position: "relative" }}>
+          <Search size={20} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--ink-soft)" }} />
+          <input
+            type="text"
+            placeholder="Search by city, country, or vibe..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "16px 16px 16px 48px",
+              borderRadius: "16px",
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              fontSize: "1rem",
+              transition: "all 0.3s ease"
+            }}
+          />
         </form>
-
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
-          {REGIONS.map((r) => (
-            <button 
+        
+        <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+          {REGIONS.map(r => (
+            <button
               key={r}
-              className={`btn btn--sm ${region === r ? "btn--primary" : "btn--secondary"}`}
               onClick={() => setRegion(r)}
-              style={{ whiteSpace: "nowrap", borderRadius: "var(--radius-full)" }}
+              style={{
+                padding: "12px 20px",
+                borderRadius: "99px",
+                background: region === r ? "var(--ink)" : "var(--surface)",
+                color: region === r ? "var(--white)" : "var(--ink)",
+                border: `1px solid ${region === r ? "var(--ink)" : "var(--border)"}`,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                fontWeight: 500,
+                transition: "all 0.3s ease"
+              }}
             >
               {r}
             </button>
@@ -74,22 +104,35 @@ export default function ExplorePage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "var(--ink-soft)" }}>Loading destinations...</div>
-      ) : cities.length > 0 ? (
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
-          gap: 24 
-        }}>
-          {cities.map((city) => (
-            <CityCard key={city.id} city={city} />
-          ))}
+        <div style={{ display: "flex", justifyContent: "center", padding: "64px" }}>
+          <div className="spinner" style={{ width: 40, height: 40, border: "3px solid var(--border)", borderTopColor: "var(--ink)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        </div>
+      ) : cities.length === 0 ? (
+        <div style={{ padding: "80px", textAlign: "center", background: "rgba(0,0,0,0.02)", borderRadius: "24px", border: "1px dashed rgba(0,0,0,0.1)" }}>
+          <Compass size={48} style={{ margin: "0 auto", marginBottom: 16, opacity: 0.2 }} />
+          <h2 style={{ marginBottom: 8 }}>No destinations found</h2>
+          <p style={{ color: "var(--ink-soft)" }}>Try adjusting your search or region filter.</p>
         </div>
       ) : (
-        <div style={{ textAlign: "center", padding: "64px 20px", background: "var(--surface)", borderRadius: "var(--radius-md)" }}>
-          <p style={{ color: "var(--ink-soft)" }}>No destinations found matching your criteria.</p>
-        </div>
+        <motion.div 
+          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}
+          initial="hidden"
+          animate="show"
+          variants={{
+            hidden: { opacity: 0 },
+            show: { opacity: 1, transition: { staggerChildren: 0.05 } }
+          }}
+        >
+          {cities.map((city) => (
+            <motion.div key={city.id} variants={{
+              hidden: { opacity: 0, scale: 0.9 },
+              show: { opacity: 1, scale: 1, transition: { duration: 0.4 } }
+            }}>
+              <CityCard city={city} />
+            </motion.div>
+          ))}
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
