@@ -233,8 +233,8 @@ export default function LandingPage() {
             { name: 'Bali', country: 'Indonesia', flag: '🇮🇩', score: '9.5', img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800', desc: 'An island paradise known for its forested volcanic mountains, iconic rice paddies, and coral reefs.' },
             { name: 'Prague', country: 'Czech Rep', flag: '🇨🇿', score: '9.3', img: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=800', desc: 'Known as the City of a Hundred Spires, featuring colorful baroque buildings and Gothic churches.' },
             { name: 'Vienna', country: 'Austria', flag: '🇦🇹', score: '9.4', img: 'https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=800', desc: 'Austria’s capital lies in the country’s east on the Danube River. Known for its Imperial palaces.' },
-            { name: 'Lisbon', country: 'Portugal', flag: '🇵🇹', score: '9.5', img: 'https://images.unsplash.com/photo-1548707309-dcebe6120111?w=800', desc: 'A coastal capital city known for its cafe culture and soulful Fado music.' },
-            { name: 'Athens', country: 'Greece', flag: '🇬🇷', score: '9.2', img: 'https://images.unsplash.com/photo-1518105779142-d9715649bbde?w=800', desc: 'The heart of Ancient Greece, a powerful civilization and empire.' },
+            { name: 'Lisbon', country: 'Portugal', flag: '🇵🇹', score: '9.5', img: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800', desc: 'A coastal capital city known for its cafe culture and soulful Fado music.' },
+            { name: 'Athens', country: 'Greece', flag: '🇬🇷', score: '9.2', img: 'https://images.unsplash.com/photo-1603565816030-6b389eeb23cb?w=800', desc: 'The heart of Ancient Greece, a powerful civilization and empire.' },
           ].map((city, i) => (
             <motion.div key={i} variants={fadeUp}>
               <TiltCard>
