@@ -34,11 +34,9 @@ export default function CityCard({ city }) {
           {city.description || "A beautiful destination to explore."}
         </p>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.05)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--accent)", fontWeight: "600", fontSize: "0.875rem" }}>
-            <span>₹{Math.round((city.cost_index || 50) * 40).toLocaleString('en-IN')}</span> 
+          <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--ink)", fontWeight: "700", fontSize: "1.1rem" }}>
+            <span>₹ {Math.round((city.cost_index || 50) * 40).toLocaleString('en-IN')}</span> 
             <span style={{ fontSize: "0.75rem", color: "var(--ink-soft)", fontWeight: "normal" }}>/ night stay avg</span>
-          </div>
-        </div>
           </div>
         </div>
       </div>

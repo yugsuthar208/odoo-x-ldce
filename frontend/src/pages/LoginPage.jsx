@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Globe } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -37,7 +37,8 @@ export default function LoginPage() {
     <div style={{ display: "flex", minHeight: "100vh" }}>
       {/* Left decorative panel */}
       <div style={{
-        flex: 1, background: "var(--ink)",
+        flex: 1, 
+        background: "url(https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2000&auto=format&fit=crop) center/cover",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         padding: 48,
@@ -45,13 +46,13 @@ export default function LoginPage() {
       }} className="hide-mobile">
         <div style={{
           position: "absolute", inset: 0,
-          background: "radial-gradient(ellipse at 30% 60%, rgba(195,248,50,0.12) 0%, transparent 60%)",
+          background: "linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)",
         }} />
         <Globe size={64} color="var(--accent)" style={{ marginBottom: 24, position: "relative" }} />
-        <h1 style={{ color: "var(--white)", textAlign: "center", position: "relative" }}>
+        <h1 style={{ color: "var(--white)", textAlign: "center", position: "relative", textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
           Plan smarter.<br />Travel better.
         </h1>
-        <p style={{ color: "rgba(255,255,255,0.5)", marginTop: 16, textAlign: "center", position: "relative" }}>
+        <p style={{ color: "rgba(255,255,255,0.8)", marginTop: 16, textAlign: "center", position: "relative", textShadow: "0 2px 10px rgba(0,0,0,0.5)", fontSize: "1.1rem" }}>
           Multi-city itineraries, AI budget prediction,<br />curated city experiences.
         </p>
       </div>

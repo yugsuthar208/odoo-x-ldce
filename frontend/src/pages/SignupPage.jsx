@@ -32,15 +32,16 @@ export default function SignupPage() {
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <div style={{
-        flex: 1, background: "var(--ink)",
+        flex: 1, 
+        background: "url(https://images.unsplash.com/photo-1506929562872-bb421503ef21?q=80&w=2000&auto=format&fit=crop) center/cover",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center", padding: 48,
         position: "relative", overflow: "hidden",
       }} className="hide-mobile">
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 40%, rgba(195,248,50,0.12) 0%, transparent 60%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.8) 100%)" }} />
         <Globe size={64} color="var(--accent)" style={{ marginBottom: 24, position: "relative" }} />
-        <h1 style={{ color: "var(--white)", textAlign: "center", position: "relative" }}>Start your journey</h1>
-        <p style={{ color: "rgba(255,255,255,0.5)", marginTop: 16, textAlign: "center", position: "relative" }}>
+        <h1 style={{ color: "var(--white)", textAlign: "center", position: "relative", textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>Start your journey</h1>
+        <p style={{ color: "rgba(255,255,255,0.8)", marginTop: 16, textAlign: "center", position: "relative", textShadow: "0 2px 10px rgba(0,0,0,0.5)", fontSize: "1.1rem" }}>
           AI-powered travel planning,<br />budget tracking, and city discovery.
         </p>
       </div>
