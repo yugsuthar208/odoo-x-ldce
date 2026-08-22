@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     
     # Budget configuration constants
     MEALS_PER_DAY_USD: float = float(os.getenv("MEALS_PER_DAY_USD", "25.0"))
+    DEFAULT_CITY_COST_INDEX: float = float(os.getenv("DEFAULT_CITY_COST_INDEX", "80.0"))
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
     # ML Model storage path
     BASE_DIR: Path = Path(__file__).resolve().parent.parent

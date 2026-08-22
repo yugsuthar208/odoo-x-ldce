@@ -1,7 +1,8 @@
-from datetime import date
-from typing import List, Optional
+import math
+from datetime import date, datetime
+from typing import List, Optional, Tuple
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -9,76 +10,36 @@ from app.config import settings
 from app.models.activity import Activity
 from app.models.budget import Budget
 from app.models.city import City
-from app.models.stop import Stop
-from app.models.stop_activity import StopActivity
+from app.models.expense import Expense
+from app.models.itinerary_item import ItineraryItem
+from app.models.stop import TripStop
 from app.models.trip import Trip
+from app.models.trip_collaborator import TripCollaborator
 from app.models.user import User
 from app.schemas.trip import TripCreate, TripUpdate
 
 
-async def list_user_trips(db: AsyncSession, user_id: str) -> List[Trip]:
+async def get_trip_and_check_access(
+    db: AsyncSession,
+    trip_id: str,
+    user_id: Optional[str] = None,
+    required_role: str = "viewer",  # "viewer" or "editor" or "owner"
+) -> Trip:
     """
-    Lists all trips planned by the specified user.
-    """
-    query = (
-        select(Trip)
-        .where(Trip.user_id == user_id)
-        .order_by(Trip.created_at.desc())
-    )
-    result = await db.execute(query)
-    return list(result.scalars().all())
-
-
-async def create_trip(db: AsyncSession, user_id: str, payload: TripCreate) -> Trip:
-    """
-    Creates a new trip and initializes an associated default budget record.
-    """
-    if payload.start_date > payload.end_date:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Trip start date cannot be after end date",
-        )
-
-    trip = Trip(
-        user_id=user_id,
-        title=payload.title.strip(),
-        description=payload.description,
-        start_date=payload.start_date,
-        end_date=payload.end_date,
-        cover_photo=payload.cover_photo,
-        is_public=payload.is_public,
-    )
-    db.add(trip)
-    await db.flush()
-
-    # Automatically create a corresponding Budget row
-    budget = Budget(
-        trip_id=trip.id,
-        transport_cost=0.0,
-        stay_cost=0.0,
-        meals_cost=0.0,
-        misc_cost=0.0,
-        total_budget_limit=None,
-    )
-    db.add(budget)
-    await db.flush()
-
-    return await get_trip_detail(db=db, trip_id=trip.id, current_user=await db.get(User, user_id))
-
-
-async def get_trip_detail(db: AsyncSession, trip_id: str, current_user: Optional[User] = None) -> Trip:
-    """
-    Retrieves full details of a trip including stops, assigned activities, and budget.
+    Fetches a trip and verifies access permissions:
+    - Owner has full permissions (owner, editor, viewer).
+    - Collaborator with role="editor" has editor & viewer permissions.
+    - Collaborator with role="viewer" has viewer permission.
+    - Public trip (visibility="public") is accessible for viewer without authentication.
     """
     query = (
         select(Trip)
         .options(
             selectinload(Trip.budget),
-            selectinload(Trip.stops)
-            .selectinload(Stop.city),
-            selectinload(Trip.stops)
-            .selectinload(Stop.stop_activities)
-            .selectinload(StopActivity.activity),
+            selectinload(Trip.stops).selectinload(TripStop.city),
+            selectinload(Trip.stops).selectinload(TripStop.itinerary_items).selectinload(ItineraryItem.activity),
+            selectinload(Trip.collaborators).selectinload(TripCollaborator.user),
+            selectinload(Trip.expenses),
         )
         .where(Trip.id == trip_id)
     )
@@ -91,15 +52,143 @@ async def get_trip_detail(db: AsyncSession, trip_id: str, current_user: Optional
             detail=f"Trip with id '{trip_id}' not found",
         )
 
-    # Permission check: must be owner if private
-    if not trip.is_public:
-        if current_user is None or trip.user_id != current_user.id:
+    # If public and only viewer access needed, allow
+    if trip.visibility == "public" and required_role == "viewer":
+        return trip
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required to access this trip",
+        )
+
+    # Owner has all access
+    if trip.user_id == user_id:
+        return trip
+
+    # Check collaborators
+    collaborator_roles = {c.user_id: c.role for c in trip.collaborators}
+    user_role = collaborator_roles.get(user_id)
+
+    if required_role == "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the trip owner can perform this action",
+        )
+    elif required_role == "editor":
+        if user_role != "editor":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to view this private trip",
+                detail="You must be an editor or owner to modify this trip",
+            )
+    elif required_role == "viewer":
+        if user_role not in ["editor", "viewer"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to view this trip",
             )
 
     return trip
+
+
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculates the great-circle distance between two points in kilometers."""
+    R = 6371.0  # Earth radius in km
+    d_lat = math.radians(lat2 - lat1)
+    d_lon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(d_lat / 2) ** 2
+        + math.cos(math.radians(lat1))
+        * math.cos(math.radians(lat2))
+        * math.sin(d_lon / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return round(R * c, 2)
+
+
+async def list_user_trips(
+    db: AsyncSession,
+    user_id: str,
+    status_filter: Optional[str] = None,
+    search: Optional[str] = None,
+) -> List[Trip]:
+    """
+    Lists trips where user is owner or collaborator with optional status and search filtering.
+    """
+    collab_subq = select(TripCollaborator.trip_id).where(TripCollaborator.user_id == user_id)
+    query = (
+        select(Trip)
+        .where(or_(Trip.user_id == user_id, Trip.id.in_(collab_subq)))
+        .order_by(Trip.created_at.desc())
+    )
+
+    if search:
+        pattern = f"%{search.strip()}%"
+        query = query.where(or_(Trip.title.ilike(pattern), Trip.description.ilike(pattern)))
+
+    result = await db.execute(query)
+    trips = list(result.scalars().all())
+
+    # Update dynamic status if needed and apply status filter
+    filtered_trips = []
+    for trip in trips:
+        calc_status = trip.dynamic_status()
+        if trip.status != "draft" and trip.status != calc_status:
+            trip.status = calc_status
+            db.add(trip)
+        if status_filter:
+            if trip.status.lower() == status_filter.lower():
+                filtered_trips.append(trip)
+        else:
+            filtered_trips.append(trip)
+
+    return filtered_trips
+
+
+async def create_trip(db: AsyncSession, user_id: str, payload: TripCreate) -> Trip:
+    """Creates a new trip and its budget."""
+    if payload.start_date > payload.end_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Trip start date cannot be after end date",
+        )
+
+    visibility = payload.visibility or ("public" if payload.is_public else "private")
+    status_val = payload.status or "draft"
+
+    trip = Trip(
+        user_id=user_id,
+        title=payload.title.strip(),
+        description=payload.description,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+        cover_photo=payload.cover_photo,
+        total_budget=payload.total_budget,
+        currency=payload.currency or "USD",
+        visibility=visibility,
+        status=status_val,
+    )
+    db.add(trip)
+    await db.flush()
+
+    budget = Budget(
+        trip_id=trip.id,
+        transport_cost=0.0,
+        stay_cost=0.0,
+        meals_cost=0.0,
+        misc_cost=0.0,
+        total_budget_limit=payload.total_budget,
+    )
+    db.add(budget)
+    await db.flush()
+
+    return await get_trip_detail(db=db, trip_id=trip.id, current_user=await db.get(User, user_id))
+
+
+async def get_trip_detail(db: AsyncSession, trip_id: str, current_user: Optional[User] = None) -> Trip:
+    """Retrieves full trip details checking viewer permission."""
+    user_id = current_user.id if current_user else None
+    return await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=user_id, required_role="viewer")
 
 
 async def update_trip(
@@ -108,21 +197,8 @@ async def update_trip(
     current_user: User,
     payload: TripUpdate,
 ) -> Trip:
-    """
-    Updates general trip information (title, dates, photo, visibility).
-    """
-    trip = await db.get(Trip, trip_id)
-    if trip is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Trip with id '{trip_id}' not found",
-        )
-
-    if trip.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to update this trip",
-        )
+    """Updates trip details checking editor/owner permission."""
+    trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="editor")
 
     if payload.title is not None:
         trip.title = payload.title.strip()
@@ -134,8 +210,18 @@ async def update_trip(
         trip.end_date = payload.end_date
     if payload.cover_photo is not None:
         trip.cover_photo = payload.cover_photo
-    if payload.is_public is not None:
-        trip.is_public = payload.is_public
+    if payload.total_budget is not None:
+        trip.total_budget = payload.total_budget
+        if trip.budget:
+            trip.budget.total_budget_limit = payload.total_budget
+    if payload.currency is not None:
+        trip.currency = payload.currency
+    if payload.visibility is not None:
+        trip.visibility = payload.visibility
+    elif payload.is_public is not None:
+        trip.visibility = "public" if payload.is_public else "private"
+    if payload.status is not None:
+        trip.status = payload.status
 
     if trip.start_date > trip.end_date:
         raise HTTPException(
@@ -149,40 +235,83 @@ async def update_trip(
 
 
 async def delete_trip(db: AsyncSession, trip_id: str, current_user: User) -> dict:
-    """
-    Deletes a trip and cascades all attached stops and budget entries.
-    """
-    trip = await db.get(Trip, trip_id)
-    if trip is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Trip with id '{trip_id}' not found",
-        )
-
-    if trip.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to delete this trip",
-        )
-
+    """Deletes trip (owner only) cascading all related entities."""
+    trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="owner")
     await db.delete(trip)
     await db.flush()
     return {"message": "Trip deleted successfully"}
 
 
+async def duplicate_trip(db: AsyncSession, trip_id: str, current_user: User) -> Trip:
+    """
+    Copies entire trip including stops, assigned itinerary items, and budget configuration as a new draft.
+    """
+    source_trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="viewer")
+
+    new_trip = Trip(
+        user_id=current_user.id,
+        title=f"Copy of {source_trip.title}",
+        description=source_trip.description,
+        start_date=source_trip.start_date,
+        end_date=source_trip.end_date,
+        cover_photo=source_trip.cover_photo,
+        total_budget=source_trip.total_budget,
+        currency=source_trip.currency,
+        visibility="private",
+        status="draft",
+    )
+    db.add(new_trip)
+    await db.flush()
+
+    new_budget = Budget(
+        trip_id=new_trip.id,
+        transport_cost=source_trip.budget.transport_cost if source_trip.budget else 0.0,
+        stay_cost=source_trip.budget.stay_cost if source_trip.budget else 0.0,
+        meals_cost=source_trip.budget.meals_cost if source_trip.budget else 0.0,
+        misc_cost=source_trip.budget.misc_cost if source_trip.budget else 0.0,
+        total_budget_limit=source_trip.budget.total_budget_limit if source_trip.budget else None,
+    )
+    db.add(new_budget)
+    await db.flush()
+
+    for stop in source_trip.stops:
+        new_stop = TripStop(
+            trip_id=new_trip.id,
+            city_id=stop.city_id,
+            arrival_date=stop.arrival_date,
+            departure_date=stop.departure_date,
+            stop_order=stop.stop_order,
+            notes=stop.notes,
+        )
+        db.add(new_stop)
+        await db.flush()
+
+        for item in stop.itinerary_items:
+            new_item = ItineraryItem(
+                trip_stop_id=new_stop.id,
+                activity_id=item.activity_id,
+                scheduled_date=item.scheduled_date,
+                start_time=item.start_time,
+                end_time=item.end_time,
+                custom_cost=item.custom_cost,
+                notes=item.notes,
+                status="planned",
+            )
+            db.add(new_item)
+
+    await db.flush()
+    return await get_trip_detail(db=db, trip_id=new_trip.id, current_user=current_user)
+
+
 async def get_public_trip(db: AsyncSession, trip_id: str) -> Trip:
-    """
-    Retrieves public read-only view of a trip without requiring authentication.
-    """
+    """Retrieves public read-only view of a trip."""
     query = (
         select(Trip)
         .options(
-            selectinload(Trip.stops).selectinload(Stop.city),
-            selectinload(Trip.stops)
-            .selectinload(Stop.stop_activities)
-            .selectinload(StopActivity.activity),
+            selectinload(Trip.stops).selectinload(TripStop.city),
+            selectinload(Trip.stops).selectinload(TripStop.itinerary_items).selectinload(ItineraryItem.activity),
         )
-        .where(Trip.id == trip_id, Trip.is_public.is_(True))
+        .where(Trip.id == trip_id, Trip.visibility == "public")
     )
     result = await db.execute(query)
     trip = result.scalar_one_or_none()
@@ -201,54 +330,13 @@ async def calculate_trip_budget(
     db: AsyncSession,
 ) -> dict:
     """
-    Upgraded multi-step trip budget calculation engine:
-    - Validates ownership for current_user
-    - STEP 1: Fetch base data (trip, stops, activities, budgets row)
-    - STEP 2: Calculate stay_cost across all stops (minimum 1 day per stop, default city cost 80.0)
-    - STEP 3: Calculate activities_cost (sum of stop activities, default 0.0)
-    - STEP 4: Calculate meals_cost (MEALS_PER_DAY_USD * total_trip_days)
-    - STEP 5: Load transport_cost and misc_cost from budget table
-    - STEP 6: Compute total_cost
-    - STEP 7: Compute cost_per_day
-    - STEP 8: Calculate savings_needed_per_day and determine trip_status
-    - STEP 9: Compute budget overage and remaining balance
-    - STEP 10: Generate per-stop breakdown
-    - STEP 11: Calculate cost distribution percentages
+    Computes upgraded 12-step budget forecast and breakdown.
     """
-    # -------------------------------------------------------------
-    # STEP 1 — Fetch base data & Validate ownership
-    # -------------------------------------------------------------
-    query = (
-        select(Trip)
-        .options(
-            selectinload(Trip.budget),
-            selectinload(Trip.stops).selectinload(Stop.city),
-            selectinload(Trip.stops)
-            .selectinload(Stop.stop_activities)
-            .selectinload(StopActivity.activity),
-        )
-        .where(Trip.id == trip_id)
-    )
-    result = await db.execute(query)
-    trip = result.scalar_one_or_none()
+    trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="viewer")
 
-    if trip is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Trip with id '{trip_id}' not found",
-        )
-
-    if trip.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to access this trip's budget",
-        )
-
-    # Edge Case 4: total_trip_days minimum = 1 (never divide by zero)
     days_diff = (trip.end_date - trip.start_date).days
     total_trip_days = max(1, days_diff if days_diff > 0 else 1)
 
-    # Edge Case 3: Ensure budget record exists
     if trip.budget is None:
         trip.budget = Budget(
             trip_id=trip.id,
@@ -256,25 +344,20 @@ async def calculate_trip_budget(
             stay_cost=0.0,
             meals_cost=0.0,
             misc_cost=0.0,
-            total_budget_limit=None,
+            total_budget_limit=trip.total_budget,
         )
         db.add(trip.budget)
         await db.flush()
 
-    # -------------------------------------------------------------
-    # STEP 2 & 10 — stay_cost & per-stop breakdown
-    # -------------------------------------------------------------
     stop_breakdown = []
     has_stops = len(trip.stops) > 0
 
     if has_stops:
         for stop in trip.stops:
-            # Edge Case 2: arrival_date == departure_date -> days_at_stop = 1
             stop_days_diff = (stop.departure_date - stop.arrival_date).days
             days_at_stop = max(1, stop_days_diff if stop_days_diff > 0 else 1)
 
-            # Edge Case 7: city.cost_index is NULL -> default 80.0 USD
-            city_cost_index = 80.0
+            city_cost_index = settings.DEFAULT_CITY_COST_INDEX if hasattr(settings, "DEFAULT_CITY_COST_INDEX") else 80.0
             city_name = "Unknown City"
             if stop.city:
                 city_name = stop.city.name
@@ -283,11 +366,9 @@ async def calculate_trip_budget(
 
             stop_stay_cost = round(city_cost_index * days_at_stop, 2)
 
-            # Edge Case 6: Activity cost is NULL -> treat as 0.0
             stop_activities_cost = 0.0
-            for sa in stop.stop_activities:
-                if sa.activity and sa.activity.cost is not None:
-                    stop_activities_cost += float(sa.activity.cost)
+            for item in stop.itinerary_items:
+                stop_activities_cost += item.effective_cost
             stop_activities_cost = round(stop_activities_cost, 2)
 
             stop_meals_cost = round(settings.MEALS_PER_DAY_USD * days_at_stop, 2)
@@ -305,53 +386,24 @@ async def calculate_trip_budget(
 
         stay_cost = round(sum(s["stay_cost"] for s in stop_breakdown), 2)
         activities_cost = round(sum(s["activities_cost"] for s in stop_breakdown), 2)
-        # STEP 4: meals_cost based on total_trip_days
         meals_cost = round(settings.MEALS_PER_DAY_USD * total_trip_days, 2)
     else:
-        # Edge Case 1: Trip has NO stops yet
         stay_cost = 0.0
         activities_cost = 0.0
         meals_cost = 0.0
 
-    # -------------------------------------------------------------
-    # STEP 5 — transport_cost and misc_cost
-    # -------------------------------------------------------------
     transport_cost = round(float(trip.budget.transport_cost or 0.0), 2)
     misc_cost = round(float(trip.budget.misc_cost or 0.0), 2)
-
-    # -------------------------------------------------------------
-    # STEP 6 — total_cost
-    # -------------------------------------------------------------
     total_cost = round(stay_cost + activities_cost + meals_cost + transport_cost + misc_cost, 2)
-
-    # -------------------------------------------------------------
-    # STEP 7 — cost_per_day
-    # -------------------------------------------------------------
     cost_per_day = round(total_cost / total_trip_days, 2)
 
-    # -------------------------------------------------------------
-    # STEP 8 — savings_needed_per_day & trip_status
-    # -------------------------------------------------------------
     today_date = date.today()
     days_until_trip = (trip.start_date - today_date).days
 
-    if today_date > trip.end_date:
-        trip_status = "completed"
-    elif today_date >= trip.start_date:
-        trip_status = "ongoing"
-    else:
-        trip_status = "upcoming"
+    trip_status = trip.dynamic_status()
+    savings_needed_per_day = round(total_cost / days_until_trip, 2) if days_until_trip > 0 else None
 
-    # Edge Case 5: trip already started (start_date <= today)
-    if days_until_trip > 0:
-        savings_needed_per_day = round(total_cost / days_until_trip, 2)
-    else:
-        savings_needed_per_day = None
-
-    # -------------------------------------------------------------
-    # STEP 9 — is_over_budget + overage
-    # -------------------------------------------------------------
-    total_budget_limit = trip.budget.total_budget_limit
+    total_budget_limit = trip.budget.total_budget_limit or trip.total_budget
     if total_budget_limit is not None:
         total_budget_limit = round(float(total_budget_limit), 2)
         is_over_budget = total_cost > total_budget_limit
@@ -362,9 +414,6 @@ async def calculate_trip_budget(
         budget_overage = None
         budget_remaining = None
 
-    # -------------------------------------------------------------
-    # STEP 11 — cost_distribution_percent
-    # -------------------------------------------------------------
     if total_cost > 0:
         cost_dist_percent = {
             "stay": round((stay_cost / total_cost) * 100, 1),
@@ -374,15 +423,8 @@ async def calculate_trip_budget(
             "misc": round((misc_cost / total_cost) * 100, 1),
         }
     else:
-        cost_dist_percent = {
-            "stay": 0.0,
-            "activities": 0.0,
-            "meals": 0.0,
-            "transport": 0.0,
-            "misc": 0.0,
-        }
+        cost_dist_percent = {"stay": 0.0, "activities": 0.0, "meals": 0.0, "transport": 0.0, "misc": 0.0}
 
-    # Synchronize database budget row with calculated figures
     trip.budget.stay_cost = stay_cost
     trip.budget.meals_cost = meals_cost
     db.add(trip.budget)
@@ -412,6 +454,52 @@ async def calculate_trip_budget(
             "budget_overage": budget_overage,
             "budget_remaining": budget_remaining,
         },
-        "stop_breakdown": stop_breakdown,
         "cost_distribution_percent": cost_dist_percent,
+        "stop_breakdown": stop_breakdown,
+    }
+
+
+async def calculate_map_route(
+    db: AsyncSession,
+    trip_id: str,
+    current_user: Optional[User] = None,
+) -> dict:
+    """
+    Computes ordered route coordinates and total distance using the Haversine formula.
+    """
+    user_id = current_user.id if current_user else None
+    trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=user_id, required_role="viewer")
+
+    ordered_stops = sorted(trip.stops, key=lambda s: s.stop_order)
+    route_points = []
+    total_distance = 0.0
+
+    prev_lat, prev_lon = None, None
+    for s in ordered_stops:
+        city = s.city
+        lat = city.latitude if (city and city.latitude is not None) else 0.0
+        lon = city.longitude if (city and city.longitude is not None) else 0.0
+        days_diff = (s.departure_date - s.arrival_date).days
+        days = max(1, days_diff if days_diff > 0 else 1)
+
+        route_points.append({
+            "stop_order": s.stop_order,
+            "city_name": city.name if city else "Unknown",
+            "country": city.country if city else "Unknown",
+            "latitude": lat,
+            "longitude": lon,
+            "arrival_date": s.arrival_date,
+            "departure_date": s.departure_date,
+            "days": days,
+        })
+
+        if prev_lat is not None and prev_lon is not None:
+            total_distance += haversine_distance(prev_lat, prev_lon, lat, lon)
+        prev_lat, prev_lon = lat, lon
+
+    return {
+        "trip_id": trip.id,
+        "route": route_points,
+        "total_cities": len(route_points),
+        "total_distance_km": round(total_distance, 2),
     }

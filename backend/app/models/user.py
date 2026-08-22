@@ -14,8 +14,12 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     profile_photo = Column(String(512), nullable=True)
+    preferred_currency = Column(String(10), default="USD", nullable=False)
     language = Column(String(10), default="en", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
     trips = relationship("Trip", back_populates="user", cascade="all, delete-orphan", lazy="selectin")
+    favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan", lazy="selectin")
+    collaborations = relationship("TripCollaborator", back_populates="user", cascade="all, delete-orphan", lazy="selectin")
+    expenses_paid = relationship("Expense", back_populates="paid_by_user", lazy="selectin")

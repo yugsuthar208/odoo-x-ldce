@@ -31,36 +31,37 @@ def encode_region(region: str) -> int:
 
 def generate_synthetic_data(n_samples: int = 500, random_state: int = 42) -> pd.DataFrame:
     """
-    Generates synthetic trip training data simulating realistic travel expense patterns.
+    Generates synthetic trip training data with realistic multi-city expense patterns:
+    - days range 3-30
+    - stops range 1-8
+    - activities per stop range 2-6
+    - cost_index range 40-200
+    - cost = (avg_cost_index * days * 1.1) + total_activity_cost + (25 * days) + noise
     """
     np.random.seed(random_state)
 
-    total_days = np.random.randint(1, 31, size=n_samples)
-    num_stops = np.clip(np.random.randint(1, 6, size=n_samples), 1, total_days)
-    num_activities = np.random.randint(1, 25, size=n_samples)
-    avg_city_cost_index = np.random.uniform(35.0, 320.0, size=n_samples)
+    total_days = np.random.randint(3, 31, size=n_samples)
+    num_stops = np.clip(np.random.randint(1, 9, size=n_samples), 1, total_days)
+    activities_per_stop = np.random.randint(2, 7, size=n_samples)
+    num_activities = num_stops * activities_per_stop
+    avg_city_cost_index = np.random.uniform(40.0, 200.0, size=n_samples)
+    total_activity_cost = num_activities * np.random.uniform(20.0, 60.0, size=n_samples)
     region_encoded = np.random.choice(list(set(REGION_MAP.values())), size=n_samples)
 
-    # Realistic cost physics:
-    # Stay cost ~ avg_city_cost_index * total_days
-    # Activities ~ num_activities * $35 avg
-    # Meals ~ $25 * total_days
-    # Transport ~ $150 base + $100 * num_stops + region distance factor
-    # Random variance / noise
-    stay_cost = avg_city_cost_index * total_days
-    activity_cost = num_activities * np.random.uniform(20.0, 50.0, size=n_samples)
-    meals_cost = 25.0 * total_days
-    transport_cost = 100.0 + (num_stops * 85.0) + (region_encoded * 45.0)
-    noise = np.random.normal(0, 50.0, size=n_samples)
+    # Realistic calculation formula
+    base_stay = avg_city_cost_index * total_days * 1.1
+    meals = 25.0 * total_days
+    noise = np.random.normal(0, 40.0, size=n_samples)
 
-    total_cost = stay_cost + activity_cost + meals_cost + transport_cost + noise
-    total_cost = np.maximum(total_cost, 50.0)
+    total_cost = base_stay + total_activity_cost + meals + noise
+    total_cost = np.maximum(total_cost, 100.0)
 
     df = pd.DataFrame({
         "total_days": total_days,
         "num_stops": num_stops,
         "num_activities": num_activities,
         "avg_city_cost_index": avg_city_cost_index,
+        "total_activity_cost": total_activity_cost,
         "region_encoded": region_encoded,
         "total_cost": total_cost,
     })
@@ -78,7 +79,7 @@ def train_and_save_model(output_path: str = None) -> LinearRegression:
         output_path = Path(output_path)
 
     df = generate_synthetic_data(n_samples=500)
-    features = ["total_days", "num_stops", "num_activities", "avg_city_cost_index", "region_encoded"]
+    features = ["total_days", "num_stops", "num_activities", "avg_city_cost_index", "total_activity_cost", "region_encoded"]
     X = df[features]
     y = df["total_cost"]
 

@@ -11,7 +11,11 @@ from app.routes import (
     activities_router,
     auth_router,
     cities_router,
+    expenses_router,
+    favorites_router,
+    itinerary_router,
     recommend_router,
+    shared_router,
     stops_router,
     trips_router,
     users_router,
@@ -22,30 +26,29 @@ from app.routes import (
 async def lifespan(app: FastAPI):
     """
     Application lifespan events:
-    - Initialize database tables if running in development / testing mode.
-    - Preload machine learning models into memory on startup.
+    - Automatically creates/synchronizes all database tables.
+    - Preloads Scikit-Learn machine learning budget model.
+    - Logs startup and teardown messages.
     """
-    # 1. Ensure tables exist
+    print("[GlobeTrotter API] Initializing database schema...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # 2. Warm up ML model
-    print("[GlobeTrotter] Initializing ML models...")
+    print("[GlobeTrotter API] Initializing ML models...")
     get_or_load_model()
-    print("[GlobeTrotter] Backend service ready to serve traffic.")
+    print("GlobeTrotter API started")
 
     yield
 
-    # Cleanup operations on shutdown
     await engine.dispose()
-    print("[GlobeTrotter] Database connections closed.")
+    print("[GlobeTrotter API] Database connections closed.")
 
 
 # FastAPI Application Instance
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    description="GlobeTrotter - Personalized Travel Planning Platform Backend API",
+    title="GlobeTrotter API",
     version="1.0.0",
+    description="Personalized Travel Planning Platform",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
@@ -91,11 +94,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
     error_summary = "; ".join(error_messages) if error_messages else "Request validation failed"
     return JSONResponse(
-        status_code=422,
+        status_code=400,
         content={
             "success": False,
             "error": error_summary,
-            "status_code": 422,
+            "status_code": 400,
         },
     )
 
@@ -103,7 +106,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Catches unhandled internal server exceptions."""
-    print(f"[GlobeTrotter ERROR] Unhandled Exception: {exc}")
+    print(f"[GlobeTrotter API ERROR] Unhandled Exception: {exc}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
@@ -121,7 +124,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/health", tags=["Health"])
 async def health_check():
     """Service health check endpoint."""
-    return {"status": "ok"}
+    return {"status": "ok", "version": "1.0.0"}
 
 
 # ============================================================================
@@ -133,9 +136,13 @@ api_v1_prefix = settings.API_V1_STR
 app.include_router(auth_router, prefix=api_v1_prefix)
 app.include_router(users_router, prefix=api_v1_prefix)
 app.include_router(cities_router, prefix=api_v1_prefix)
+app.include_router(activities_router, prefix=api_v1_prefix)
 app.include_router(trips_router, prefix=api_v1_prefix)
 app.include_router(stops_router, prefix=api_v1_prefix)
-app.include_router(activities_router, prefix=api_v1_prefix)
+app.include_router(itinerary_router, prefix=api_v1_prefix)
+app.include_router(expenses_router, prefix=api_v1_prefix)
+app.include_router(shared_router, prefix=api_v1_prefix)
+app.include_router(favorites_router, prefix=api_v1_prefix)
 app.include_router(recommend_router, prefix=api_v1_prefix)
 
 

@@ -1,396 +1,171 @@
-# GlobeTrotter Backend API
+# GlobeTrotter Backend API 🌍✈️
 
-Production-ready, high-performance asynchronous backend for **GlobeTrotter** — an AI-powered personalized travel planning and budget estimation platform.
+GlobeTrotter is an enterprise-grade, production-ready backend for a personalized multi-city travel planning platform with **Scikit-Learn Machine Learning recommendations**, an **AI-powered rule-based itinerary generation engine**, **interactive map route distance calculation (Haversine)**, **schedule conflict detection**, **collaborator permissions**, **public share tokens**, and **comprehensive expense tracking**.
 
 ---
 
-## 🚀 Tech Stack
+## 🛠 Tech Stack
 
 - **Language:** Python 3.11+
-- **Framework:** FastAPI
-- **Database:** PostgreSQL (with `asyncpg` driver and async SQLAlchemy ORM)
-- **Migrations:** Alembic
-- **Authentication:** JWT (JSON Web Tokens) with Bcrypt password hashing
-- **Machine Learning:** Scikit-Learn, Pandas, NumPy, Joblib
+- **Framework:** FastAPI (High performance, OpenAPI 3.0, Swagger UI & ReDoc)
+- **Database:** PostgreSQL (with SQLite async fallback for local dev & testing)
+- **ORM:** SQLAlchemy 2.0 (Async with `asyncpg` / `aiosqlite`)
+- **Authentication:** JWT tokens (`python-jose` + `passlib` with `bcrypt`)
+- **Machine Learning & AI:** `scikit-learn`, `pandas`, `numpy`, `joblib`
+- **Validation:** Pydantic v2
+- **Database Migrations:** Alembic
 - **Server:** Uvicorn ASGI
 
 ---
 
-## 📁 Project Structure
+## 🗄 Database Schema (11 Models)
 
-```
-backend/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                     # FastAPI app factory, CORS, exception handlers & lifespan
-│   ├── database.py                 # Async SQLAlchemy engine, session maker, Base
-│   ├── config.py                   # Pydantic Settings & environment loader
-│   ├── models/                     # SQLAlchemy ORM Data Models
-│   │   ├── __init__.py
-│   │   ├── user.py                 # User account model
-│   │   ├── city.py                 # Destination city model
-│   │   ├── trip.py                 # Trip itinerary model
-│   │   ├── stop.py                 # Itinerary stop model
-│   │   ├── activity.py             # City activity model
-│   │   ├── stop_activity.py        # Assigned stop activity model
-│   │   └── budget.py               # Trip budget model
-│   ├── schemas/                    # Pydantic v2 Request/Response Schemas
-│   │   ├── __init__.py
-│   │   ├── common.py               # Standardized APIResponse & ErrorResponse
-│   │   ├── user.py                 # Auth & user schemas
-│   │   ├── city.py                 # City schemas
-│   │   ├── trip.py                 # Trip schemas
-│   │   ├── stop.py                 # Stop schemas
-│   │   ├── activity.py             # Activity schemas
-│   │   └── budget.py               # Budget calculation & prediction schemas
-│   ├── routes/                     # API Routers
-│   │   ├── __init__.py
-│   │   ├── auth.py                 # /api/auth endpoints
-│   │   ├── users.py                # /api/users endpoints
-│   │   ├── cities.py               # /api/cities endpoints
-│   │   ├── trips.py                # /api/trips endpoints
-│   │   ├── stops.py                # /api/stops endpoints
-│   │   ├── activities.py           # /api/activities endpoints
-│   │   └── recommend.py            # /api/recommend endpoints
-│   ├── controllers/                # Business Logic & DB operations
-│   │   ├── __init__.py
-│   │   ├── auth_controller.py
-│   │   ├── user_controller.py
-│   │   ├── city_controller.py
-│   │   ├── trip_controller.py
-│   │   ├── stop_controller.py
-│   │   └── activity_controller.py
-│   ├── middleware/
-│   │   ├── __init__.py
-│   │   └── auth.py                 # JWT verification & dependency injection
-│   └── ml/                         # Machine Learning Modules
-│       ├── __init__.py
-│       ├── recommender.py          # Content-based cosine similarity city recommender
-│       ├── budget_predictor.py     # Linear regression budget inference engine
-│       ├── train.py                # Synthetic dataset generator & model trainer
-│       └── budget_model.pkl        # Serialized model artifact
-├── alembic/                        # Alembic Database Migration Environment
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions/
-│       └── 001_initial_schema.py
-├── alembic.ini                     # Alembic configuration file
-├── seed.py                         # Complete seed dataset (20 cities, 100 activities, demo trips)
-├── test_api.py                     # Automated end-to-end test suite
-├── requirements.txt                # Production dependencies
-├── .env.example                    # Sample environment variables
-└── README.md
-```
+1. **`users`**: id, name, email, password_hash, profile_photo, preferred_currency, language, created_at.
+2. **`cities`**: id, name, country, region, description, cost_index, popularity_score, latitude, longitude, image_url.
+3. **`trips`**: id, user_id, title, description, start_date, end_date, cover_photo, total_budget, currency, visibility (`private`/`public`/`friends`), status (`draft`/`upcoming`/`ongoing`/`completed`), created_at.
+4. **`trip_stops`**: id, trip_id, city_id, arrival_date, departure_date, stop_order, notes.
+5. **`activities`**: id, city_id, name, category (`sightseeing`, `food`, `adventure`, `shopping`, `nature`, `history`, `wellness`), description, estimated_cost, duration_hours, latitude, longitude, image_url.
+6. **`itinerary_items`**: id, trip_stop_id, activity_id, scheduled_date, start_time, end_time, custom_cost, notes, status (`planned`, `confirmed`, `cancelled`).
+7. **`expenses`**: id, trip_id, category (`transport`, `stay`, `food`, `activity`, `misc`), description, estimated_amount, actual_amount, currency, paid_by, created_at.
+8. **`budgets`**: id, trip_id, transport_cost, stay_cost, meals_cost, misc_cost, total_budget_limit.
+9. **`favorites`**: id, user_id, city_id, activity_id, created_at.
+10. **`shared_links`**: id, trip_id, share_token (`secrets.token_urlsafe(16)`), expires_at, created_at.
+11. **`trip_collaborators`**: id, trip_id, user_id, role (`editor`, `viewer`), joined_at.
 
 ---
 
-## ⚙️ Installation & Setup
+## 🚀 Quickstart & Setup
 
-### 1. Clone & Set Up Virtual Environment
-
+### 1. Create and Activate Virtual Environment
 ```bash
-cd backend
 python -m venv venv
-
-# On Windows
-venv\Scripts\activate
-
-# On macOS/Linux
+# Windows
+.\venv\Scripts\Activate.ps1
+# macOS/Linux
 source venv/bin/activate
 ```
 
 ### 2. Install Dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 3. Configure Environment Variables
-
-Create a `.env` file from `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-```ini
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/globetrotter
-SECRET_KEY=your_jwt_secret_key_here_change_in_production
+Create a `.env` file in `backend/`:
+```env
+PROJECT_NAME=GlobeTrotter
+DATABASE_URL=sqlite+aiosqlite:///./globetrotter.db
+SECRET_KEY=super_secret_jwt_key_globetrotter_2026_change_in_prod
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_DAYS=7
-```
-*(Note: If `DATABASE_URL` is omitted, the application seamlessly defaults to SQLite async `sqlite+aiosqlite:///./globetrotter.db` for instant local testing without needing an external database server).*
-
----
-
-## 🗄️ Database Migrations
-
-### Run Migrations to Latest Version
-```bash
-alembic upgrade head
+MEALS_PER_DAY_USD=25.0
+DEFAULT_CITY_COST_INDEX=80.0
 ```
 
-### Create New Migrations (Autogenerate)
+### 4. Train ML Models & Seed Database
 ```bash
-alembic revision --autogenerate -m "description_of_changes"
-```
-
----
-
-## 🧠 Train Machine Learning Model
-
-To train or re-train the Linear Regression Budget Predictor on 500 synthetic trip data points:
-
-```bash
+# Train ML linear regression budget model
 python app/ml/train.py
-```
-This generates `app/ml/budget_model.pkl`. If this file is missing when the server starts, the application automatically trains and creates it on startup.
 
----
-
-## 🌱 Seed Database
-
-Populates the database with:
-- **20 Global Destination Cities** (Europe, Asia, Americas, Africa, Oceania, Middle East) with accurate cost indices and popularity scores.
-- **100 Curated Activities** (5 per city across Sightseeing, Food, Adventure).
-- **1 Demo Traveler Account** (`demo@globetrotter.com` / `demo1234`).
-- **2 Complete Sample Trips** with scheduled stops, activities, and budget allocations.
-
-Run:
-```bash
+# Populate 20 global cities, 100 activities, demo user, and 2 full sample trips
 python seed.py
 ```
 
----
-
-## 🚀 Running the Server
-
-Start the Uvicorn ASGI server with hot reloading:
-
+### 5. Run the Server
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn app.main:app --port 8000 --reload
 ```
+- **Interactive Swagger Docs:** `http://127.0.0.1:8000/docs`
+- **ReDoc Documentation:** `http://127.0.0.1:8000/redoc`
+- **Health Check:** `http://127.0.0.1:8000/health`
 
-- **Interactive Swagger Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc Documentation:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
-- **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
-
----
-
-## 🧪 Running Automated Tests
-
-Run the comprehensive integration test suite:
-
+### 6. Run Automated Test Suite (26 Tests)
 ```bash
 python test_api.py
 ```
 
 ---
 
-## 📋 API Endpoints Catalog
+## 📌 API Endpoints Reference
 
-### Unified Response Format
+### 🔐 Authentication & Users
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/auth/signup` | Register new user account |
+| `POST` | `/api/auth/login` | Login and obtain JWT token |
+| `POST` | `/api/auth/forgot-password` | Generate password reset token |
+| `GET` | `/api/users/me` | Get current user profile |
+| `PUT` | `/api/users/me` | Update name, profile photo, preferred currency |
+| `DELETE` | `/api/users/me` | Delete account and all associated trips |
 
-All successful responses return:
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Operation successful"
-}
-```
+### 🏙 Destination Cities & Catalog
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/cities` | Search and filter cities (`?search=&region=&country=`) |
+| `GET` | `/api/cities/{id}` | Get city details with its catalog of activities |
+| `GET` | `/api/cities/{city_id}/activities` | Filter activities (`?category=&max_cost=&max_duration=`) |
+| `GET` | `/api/activities/{id}` | Get single activity details |
+| `POST` | `/api/activities` | Add a new activity catalog item |
 
-All error responses return:
-```json
-{
-  "success": false,
-  "error": "Detailed error message",
-  "status_code": 400
-}
-```
+### 🗺 Trips & Itinerary Planning
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/trips` | List trips for current user (`?status=&search=`) |
+| `POST` | `/api/trips` | Create a new trip |
+| `GET` | `/api/trips/{id}` | Get full trip details with stops & budget |
+| `PUT` | `/api/trips/{id}` | Update trip metadata |
+| `DELETE` | `/api/trips/{id}` | Delete trip (owner only) |
+| `POST` | `/api/trips/{id}/duplicate` | Copy trip as a new draft |
+| `GET` | `/api/trips/public/{id}` | Public read-only trip overview |
+| `GET` | `/api/trips/{id}/map-route` | Route coordinates & Haversine distance in km |
 
----
+### 🛑 Stops & Schedule Management
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/trips/{id}/stops` | Append a destination stop to trip |
+| `PUT` | `/api/trips/{id}/stops/{stop_id}` | Edit stop dates, order, or notes |
+| `DELETE` | `/api/trips/{id}/stops/{stop_id}` | Remove stop from trip |
+| `PUT` | `/api/trips/{id}/stops/reorder` | Bulk reorder stops sequence |
+| `POST` | `/api/stops/{stop_id}/items` | Assign activity with date and time slots |
+| `PUT` | `/api/itinerary-items/{item_id}` | Edit scheduled activity item |
+| `DELETE` | `/api/itinerary-items/{item_id}` | Delete scheduled activity item |
+| `GET` | `/api/trips/{id}/itinerary` | Day-wise grouped itinerary schedule |
+| `GET` | `/api/trips/{id}/conflicts` | Detect overlapping schedule conflicts |
 
-### 1. Authentication (`/api/auth`)
+### 🤖 AI Itinerary Generator & ML Engine
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/trips/{id}/generate-itinerary` | Rule-based schedule generator with pace and budget constraints |
+| `GET` | `/api/recommend/cities` | Content-based cosine similarity city recommender |
+| `GET` | `/api/recommend/budget/{trip_id}` | Linear regression budget predictor vs actual cost |
 
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `POST` | `/api/auth/signup` | Register new user with bcrypt hash & return JWT | No |
-| `POST` | `/api/auth/login` | Authenticate email/password & return JWT | No |
-| `POST` | `/api/auth/forgot-password` | Generate password reset token | No |
+### 💰 Budgets & Expenses
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/trips/{id}/budget` | 12-step budget forecast and breakdown |
+| `PUT` | `/api/trips/{id}/budget` | Update manual budget fields |
+| `POST` | `/api/trips/{id}/expenses` | Log trip expense (estimated & actual) |
+| `GET` | `/api/trips/{id}/expenses` | List all expenses for a trip |
+| `PUT` | `/api/expenses/{id}` | Update expense |
+| `DELETE` | `/api/expenses/{id}` | Delete expense |
 
-#### Signup Example Body:
-```json
-{
-  "name": "Jane Traveler",
-  "email": "jane@example.com",
-  "password": "password123",
-  "profile_photo": "https://example.com/photo.jpg",
-  "language": "en"
-}
-```
-
----
-
-### 2. User Profile (`/api/users`)
-
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `GET` | `/api/users/me` | Get authenticated user profile | Bearer JWT |
-| `PUT` | `/api/users/me` | Update name, profile photo, or language | Bearer JWT |
-| `DELETE` | `/api/users/me` | Delete traveler account & cascade trip data | Bearer JWT |
-
----
-
-### 3. Destination Cities (`/api/cities`)
-
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `GET` | `/api/cities` | Search cities (`?search=Tokyo&region=Asia`) | No |
-| `GET` | `/api/cities/{id}` | Get city details with activity catalog | No |
-| `GET` | `/api/cities/{id}/activities` | Filter activities (`?type=food&max_cost=50`) | No |
-
----
-
-### 4. Trips & Itineraries (`/api/trips`)
-
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `GET` | `/api/trips` | List all trips for current user | Bearer JWT |
-| `POST` | `/api/trips` | Create new trip with default budget | Bearer JWT |
-| `GET` | `/api/trips/{id}` | Get single trip with stops, activities, budget | Bearer JWT |
-| `PUT` | `/api/trips/{id}` | Update trip details (dates, title, visibility) | Bearer JWT |
-| `DELETE` | `/api/trips/{id}` | Delete trip and associated data | Bearer JWT |
-| `GET` | `/api/trips/public/{id}` | Public read-only trip overview | No |
-| `GET` | `/api/trips/{id}/budget` | Upgraded full cost breakdown, savings target & stop breakdown | Bearer JWT |
-| `POST` | `/api/trips/{id}/stops` | Add a city stop to trip | Bearer JWT |
-
-#### Trip Creation Example Body:
-```json
-{
-  "title": "Summer in Japan",
-  "description": "Tokyo and Kyoto adventure",
-  "start_date": "2026-06-01",
-  "end_date": "2026-06-10",
-  "cover_photo": "https://example.com/japan.jpg",
-  "is_public": true
-}
-```
+### 🔗 Public Sharing, Collaboration & Favorites
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/trips/{id}/share` | Generate secure share link token |
+| `GET` | `/api/shared/{token}` | Public read-only view (sanitized) |
+| `POST` | `/api/shared/{token}/copy` | Copy public shared trip to user account |
+| `POST` | `/api/trips/{id}/collaborators` | Add editor/viewer collaborator (owner only) |
+| `GET` | `/api/trips/{id}/collaborators` | List collaborators |
+| `DELETE` | `/api/trips/{id}/collaborators/{user_id}` | Remove collaborator |
+| `POST` | `/api/favorites` | Bookmark city or activity |
+| `GET` | `/api/favorites` | List all bookmarked items |
+| `DELETE` | `/api/favorites/{id}` | Remove bookmark |
 
 ---
 
-### 5. Stops & Stop Activities (`/api/stops`)
+## 🧪 Demo Account
 
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `PUT` | `/api/stops/{id}` | Edit stop dates or order index | Bearer JWT |
-| `DELETE` | `/api/stops/{id}` | Remove stop from trip | Bearer JWT |
-| `POST` | `/api/stops/{id}/activities` | Schedule an activity to a stop | Bearer JWT |
-| `DELETE` | `/api/stops/{stop_id}/activities/{activity_id}` | Remove activity from stop | Bearer JWT |
-
-#### Schedule Activity Example Body:
-```json
-{
-  "activity_id": "activity-uuid-here",
-  "scheduled_date": "2026-06-03",
-  "scheduled_time": "14:00:00",
-  "notes": "Bring camera and comfortable shoes"
-}
-```
-
----
-
-### 6. Machine Learning Recommendations (`/api/recommend`)
-
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `GET` | `/api/recommend/cities` | Recommend cities via Cosine Similarity | Bearer JWT |
-| `GET` | `/api/recommend/budget/{trip_id}` | Predict trip cost using Linear Regression | Bearer JWT |
-
-#### Budget Prediction Response Example:
-```json
-{
-  "success": true,
-  "data": {
-    "trip_id": "8f03c405-b1a7-47b2-84fc-ea35a298bfd3",
-    "predicted_total_cost": 2145.50,
-    "features_used": {
-      "total_days": 10,
-      "num_stops": 3,
-      "num_activities": 5,
-      "avg_city_cost_index": 185.0,
-      "region_encoded": 0
-    }
-  },
-  "message": "Trip budget predicted successfully using machine learning model"
-}
-```
-
----
-
-## 🧮 Upgraded Budget Calculation Formula & Schema
-
-When `GET /api/trips/{id}/budget` is called by the trip owner:
-
-1. **`stay_cost`** = $\sum (\text{city.cost\_index} \times \text{days\_at\_stop})$ for all stops (minimum 1 day/stop, fallback $80/day)
-2. **`activities_cost`** = $\sum (\text{activity.cost})$ for all assigned stop activities
-3. **`meals_cost`** = $\text{MEALS\_PER\_DAY\_USD} \times \text{total\_trip\_days}$ (configurable via `.env`, default $25/day)
-4. **`transport_cost`** & **`misc_cost`** = from `budgets` table (default 0.0)
-5. **`total_cost`** = $\text{stay} + \text{activities} + \text{meals} + \text{transport} + \text{misc}$
-6. **`cost_per_day`** = $\text{total\_cost} / \text{total\_trip\_days}$
-7. **`savings_needed_per_day`** = $\text{total\_cost} / \text{days\_until\_trip}$ (if trip has not yet started)
-8. **`budget_status`** = `is_over_budget`, `budget_overage`, `budget_remaining` against `total_budget_limit`
-9. **`stop_breakdown`** = Per-stop breakdown with `stay_cost`, `activities_cost`, `meals_cost`, and `stop_total`
-10. **`cost_distribution_percent`** = Percentage breakdown across categories (stay, activities, meals, transport, misc)
-
-#### Example Output:
-```json
-{
-  "success": true,
-  "data": {
-    "trip_id": "8f03c405-b1a7-47b2-84fc-ea35a298bfd3",
-    "trip_title": "Europe 2025",
-    "trip_status": "upcoming",
-    "total_trip_days": 14,
-    "days_until_trip": 45,
-    "cost_breakdown": {
-      "stay_cost": 980.00,
-      "activities_cost": 320.00,
-      "meals_cost": 350.00,
-      "transport_cost": 200.00,
-      "misc_cost": 100.00,
-      "total_cost": 1950.00
-    },
-    "per_day": {
-      "cost_per_day": 139.28,
-      "savings_needed_per_day": 43.33
-    },
-    "budget_status": {
-      "total_budget_limit": 1800.00,
-      "is_over_budget": true,
-      "budget_overage": 150.00,
-      "budget_remaining": -150.00
-    },
-    "stop_breakdown": [
-      {
-        "stop_id": "stop-uuid",
-        "city_name": "Paris",
-        "days": 4,
-        "stay_cost": 400.00,
-        "activities_cost": 120.00,
-        "meals_cost": 100.00,
-        "stop_total": 620.00
-      }
-    ],
-    "cost_distribution_percent": {
-      "stay": 50.3,
-      "activities": 16.4,
-      "meals": 17.9,
-      "transport": 10.3,
-      "misc": 5.1
-    }
-  },
-  "message": "Budget calculated successfully"
-}
-```
+- **Email:** `demo@globetrotter.com`
+- **Password:** `demo1234`
+- Preloaded with **"Europe Explorer"** and **"Asia Adventure"** trips.

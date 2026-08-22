@@ -19,14 +19,15 @@ router = APIRouter(prefix="/cities", tags=["Cities"])
     summary="Search and list cities",
 )
 async def get_all_cities(
-    search: Optional[str] = Query(None, description="Search by city name or country"),
+    search: Optional[str] = Query(None, description="Search by city name, country, or region"),
     region: Optional[str] = Query(None, description="Filter by continent/region (e.g. Europe, Asia)"),
+    country: Optional[str] = Query(None, description="Filter by country (e.g. France, Japan)"),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Retrieves destination cities with optional full-text search and region filtering.
+    Retrieves destination cities with optional text search, region, and country filters.
     """
-    cities = await list_cities(db=db, search=search, region=region)
+    cities = await list_cities(db=db, search=search, region=region, country=country)
     return APIResponse(
         success=True,
         data=cities,
@@ -56,21 +57,30 @@ async def get_city_details(
 
 
 @router.get(
-    "/{id}/activities",
+    "/{city_id}/activities",
     response_model=APIResponse[List[ActivityOut]],
     status_code=status.HTTP_200_OK,
     summary="List activities for a specific city",
 )
 async def get_city_activity_list(
-    id: str,
-    type: Optional[str] = Query(None, description="Filter by activity category (sightseeing, food, adventure)"),
+    city_id: str,
+    category: Optional[str] = Query(None, description="Filter by category (sightseeing, food, adventure, shopping, nature, history, wellness)"),
+    type: Optional[str] = Query(None, description="Category alias for backwards compatibility"),
     max_cost: Optional[float] = Query(None, ge=0, description="Filter activities costing up to this amount in USD"),
+    max_duration: Optional[float] = Query(None, ge=0, description="Filter activities taking up to this duration in hours"),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Retrieves activities available in a specific city with optional filtering by type and maximum budget.
+    Retrieves activities available in a specific city with optional filtering by category, max cost, and duration.
     """
-    activities = await list_city_activities(db=db, city_id=id, activity_type=type, max_cost=max_cost)
+    cat = category or type
+    activities = await list_city_activities(
+        db=db,
+        city_id=city_id,
+        category=cat,
+        max_cost=max_cost,
+        max_duration=max_duration,
+    )
     return APIResponse(
         success=True,
         data=activities,

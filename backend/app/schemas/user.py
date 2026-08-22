@@ -8,6 +8,7 @@ class UserBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     email: EmailStr
     profile_photo: Optional[str] = None
+    preferred_currency: str = "USD"
     language: str = "en"
 
 
@@ -17,6 +18,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6)
     profile_photo: Optional[str] = None
+    preferred_currency: Optional[str] = "USD"
     language: Optional[str] = "en"
 
 
@@ -41,6 +43,7 @@ class UserUpdate(BaseModel):
     """Payload for updating user profile."""
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     profile_photo: Optional[str] = None
+    preferred_currency: Optional[str] = None
     language: Optional[str] = None
 
 
@@ -50,7 +53,8 @@ class UserOut(BaseModel):
     name: str
     email: str
     profile_photo: Optional[str] = None
-    language: str
+    preferred_currency: str = "USD"
+    language: str = "en"
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
