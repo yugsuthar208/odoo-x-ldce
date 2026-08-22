@@ -1,0 +1,21 @@
+city_name,country,region,cost_of_living_index,rent_index,restaurant_price_index,lat,lon,safety_index,budget_tier
+Paris,France,Europe,82.5,52.0,85.0,48.8566,2.3522,72.0,luxury
+Rome,Italy,Europe,70.2,38.5,72.0,41.9028,12.4964,68.0,mid-range
+Barcelona,Spain,Europe,62.4,36.2,60.5,41.3851,2.1734,74.0,mid-range
+Amsterdam,Netherlands,Europe,80.6,56.4,78.0,52.3676,4.9041,82.0,luxury
+Prague,Czech Republic,Europe,51.3,29.8,48.2,50.0755,14.4378,79.0,mid-range
+Vienna,Austria,Europe,72.8,41.0,69.4,48.2082,16.3738,84.0,luxury
+Lisbon,Portugal,Europe,54.7,34.0,52.0,38.7223,-9.1393,80.0,mid-range
+Athens,Greece,Europe,56.2,22.4,54.0,37.9838,23.7275,67.0,budget
+Tokyo,Japan,Asia,78.5,42.6,58.0,35.6762,139.6503,91.0,mid-range
+Bangkok,Thailand,Asia,42.3,21.0,32.5,13.7563,100.5018,64.0,budget
+Bali,Indonesia,Asia,38.0,18.5,28.0,-8.4095,115.1889,65.0,budget
+Singapore,Singapore,Asia,89.2,75.4,72.0,1.3521,103.8198,93.0,luxury
+Istanbul,Turkey,Asia,44.5,24.8,41.0,41.0082,28.9784,60.0,budget
+Dubai,United Arab Emirates,Asia,76.8,58.2,70.0,25.2048,55.2708,88.0,luxury
+Mumbai,India,Asia,32.4,22.0,26.0,19.076,72.8777,62.0,budget
+New York,United States,Americas,100.0,100.0,100.0,40.7128,-74.006,66.0,luxury
+Mexico City,Mexico,Americas,45.8,25.4,42.0,19.4326,-99.1332,55.0,budget
+Buenos Aires,Argentina,Americas,48.0,20.2,44.5,-34.6037,-58.3816,58.0,budget
+Cancun,Mexico,Americas,58.4,28.0,52.0,21.1619,-86.8515,61.0,mid-range
+Toronto,Canada,Americas,79.4,54.0,76.5,43.6532,-79.3832,78.0,luxury

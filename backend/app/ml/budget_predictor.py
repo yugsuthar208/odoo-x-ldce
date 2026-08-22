@@ -1,110 +1,177 @@
+import logging
 import os
 from pathlib import Path
-from typing import Optional
-from fastapi import HTTPException, status
+from typing import Any, Dict, Optional
 import joblib
 import numpy as np
 import pandas as pd
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from app.config import settings
-from app.controllers.trip_controller import calculate_trip_budget, get_trip_and_check_access
-from app.ml.train import encode_region, train_and_save_model
-from app.models.itinerary_item import ItineraryItem
-from app.models.stop import TripStop
-from app.models.trip import Trip
-from app.models.user import User
+logger = logging.getLogger("BudgetPredictor")
 
-_budget_model = None
+MODELS_DIR = Path(__file__).resolve().parent / "models"
 
 
-def get_or_load_model():
-    """Retrieves the cached LinearRegression model or loads/trains it on demand."""
-    global _budget_model
-    if _budget_model is not None:
-        return _budget_model
+class BudgetPredictor:
+    """
+    XGBoost-powered Trip Budget Predictor:
+    Predicts realistic multi-city travel expenditure incorporating Numbeo city cost indices,
+    seasonality multipliers, accommodation tiers, activity density, and flight distances.
+    """
 
-    model_path = Path(settings.ML_MODEL_PATH)
-    if not model_path.exists():
-        print(f"[ML] Model file not found at {model_path}. Training a new model...")
-        _budget_model = train_and_save_model(str(model_path))
-    else:
+    def __init__(self, models_dir: Optional[Path] = None):
+        self.models_dir = models_dir or MODELS_DIR
+        self.model = None
+        self.scaler = None
+        self.encoder = None
+        self._is_loaded = False
+
+    @property
+    def is_loaded(self) -> bool:
+        return self._is_loaded and self.model is not None
+
+    def load(self) -> bool:
+        """Loads trained XGBoost model and preprocessors from disk."""
+        model_path = self.models_dir / "budget_model.pkl"
+        scaler_path = self.models_dir / "budget_scaler.pkl"
+        encoder_path = self.models_dir / "budget_encoder.pkl"
+
+        if not model_path.exists():
+            logger.warning(f"ML model not found at {model_path}. Run python app/ml/train.py first.")
+            self._is_loaded = False
+            return False
+
         try:
-            _budget_model = joblib.load(str(model_path))
-            print(f"[ML] Budget model loaded successfully from {model_path}")
+            self.model = joblib.load(model_path)
+            if scaler_path.exists():
+                self.scaler = joblib.load(scaler_path)
+            if encoder_path.exists():
+                self.encoder = joblib.load(encoder_path)
+            self._is_loaded = True
+            logger.info("✓ BudgetPredictor model and preprocessors loaded successfully.")
+            return True
         except Exception as e:
-            print(f"[ML] Error loading model ({e}). Re-training...")
-            _budget_model = train_and_save_model(str(model_path))
+            logger.error(f"Failed to load BudgetPredictor model: {e}")
+            self._is_loaded = False
+            return False
 
-    return _budget_model
+    def predict(self, trip_features: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Runs prediction for a travel itinerary configuration.
+        """
+        if not self.is_loaded:
+            raise RuntimeError("BudgetPredictor is not loaded. Please train models first.")
 
+        # Extract features with sensible defaults
+        cost_of_living_index = float(trip_features.get("cost_of_living_index", 75.0))
+        rent_index = float(trip_features.get("rent_index", 45.0))
+        restaurant_price_index = float(trip_features.get("restaurant_price_index", 60.0))
+        travel_month = int(trip_features.get("travel_month", 6))
+        duration_days = max(1, int(trip_features.get("duration_days", 7)))
+        num_travelers = max(1, int(trip_features.get("num_travelers", 1)))
+        flight_distance_km = float(trip_features.get("flight_distance_km", 2000.0))
+        num_stops = max(1, int(trip_features.get("num_stops", 1)))
 
-async def predict_trip_budget(
-    db: AsyncSession,
-    trip_id: str,
-    current_user: User,
-) -> dict:
-    """
-    Predicts expected trip total expenditure using Linear Regression alongside actual calculated cost.
-    Features:
-      - total_days (int)
-      - num_stops (int)
-      - num_activities (int)
-      - avg_city_cost_index (float)
-      - total_activity_cost (float)
-      - region_encoded (int)
-    """
-    trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="viewer")
+        # Season mapping
+        season_str = str(trip_features.get("season", "")).lower()
+        if not season_str:
+            if travel_month in [6, 7, 8, 12]:
+                season_str = "peak"
+            elif travel_month in [4, 5, 9, 10]:
+                season_str = "shoulder"
+            else:
+                season_str = "off-peak"
 
-    days_diff = (trip.end_date - trip.start_date).days
-    total_days = max(1, days_diff if days_diff > 0 else 1)
-    num_stops = len(trip.stops)
+        season_map = {"off-peak": 0, "off_peak": 0, "shoulder": 1, "peak": 2}
+        season_encoded = season_map.get(season_str, 1)
 
-    total_activities = 0
-    total_act_cost = 0.0
-    for stop in trip.stops:
-        for it in stop.itinerary_items:
-            total_activities += 1
-            total_act_cost += it.effective_cost
+        # Accommodation Tier mapping
+        acc_str = str(trip_features.get("accommodation_tier", "mid")).lower()
+        acc_map = {"budget": 0, "mid": 1, "mid-range": 1, "luxury": 2}
+        acc_encoded = acc_map.get(acc_str, 1)
 
-    if trip.stops:
-        city_costs = [stop.city.cost_index for stop in trip.stops if stop.city and stop.city.cost_index is not None]
-        avg_city_cost = float(np.mean(city_costs)) if city_costs else settings.DEFAULT_CITY_COST_INDEX
-        first_city = trip.stops[0].city
-        region_encoded = encode_region(first_city.region if first_city else "Europe")
-    else:
-        avg_city_cost = settings.DEFAULT_CITY_COST_INDEX
-        region_encoded = 0
+        # Travel Style mapping
+        style_str = str(trip_features.get("travel_style", "explorer")).lower()
+        style_map = {"backpacker": 0, "explorer": 1, "luxury": 2}
+        style_encoded = style_map.get(style_str, 1)
 
-    features_dict = {
-        "total_days": int(total_days),
-        "num_stops": int(num_stops),
-        "num_activities": int(total_activities),
-        "avg_city_cost_index": float(round(avg_city_cost, 2)),
-        "total_activity_cost": float(round(total_act_cost, 2)),
-        "region_encoded": int(region_encoded),
-    }
+        # Activity Density mapping
+        density_str = str(trip_features.get("activity_density", "medium")).lower()
+        density_map = {"low": 0, "medium": 1, "high": 2}
+        density_encoded = density_map.get(density_str, 1)
 
-    model = get_or_load_model()
-    input_df = pd.DataFrame([features_dict])
-    prediction = model.predict(input_df)[0]
-    predicted_cost = float(round(max(100.0, prediction), 2))
+        feature_cols = [
+            "cost_of_living_index", "rent_index", "restaurant_price_index",
+            "travel_month", "season_encoded", "duration_days", "num_travelers",
+            "accommodation_tier_encoded", "travel_style_encoded", "activity_density_encoded",
+            "flight_distance_km", "num_stops"
+        ]
 
-    # Also compute actual calculated cost
-    calc_result = await calculate_trip_budget(trip_id=trip_id, current_user=current_user, db=db)
-    calculated_total = calc_result["cost_breakdown"]["total_cost"]
+        raw_df = pd.DataFrame([{
+            "cost_of_living_index": cost_of_living_index,
+            "rent_index": rent_index,
+            "restaurant_price_index": restaurant_price_index,
+            "travel_month": travel_month,
+            "season_encoded": season_encoded,
+            "duration_days": duration_days,
+            "num_travelers": num_travelers,
+            "accommodation_tier_encoded": acc_encoded,
+            "travel_style_encoded": style_encoded,
+            "activity_density_encoded": density_encoded,
+            "flight_distance_km": flight_distance_km,
+            "num_stops": num_stops,
+        }])
 
-    return {
-        "trip_id": trip.id,
-        "predicted_total_cost": predicted_cost,
-        "calculated_total_cost": calculated_total,
-        "confidence_note": "Prediction based on trip features and machine learning regression",
-        "features_used": {
-            "total_days": int(total_days),
-            "num_stops": int(num_stops),
-            "num_activities": int(total_activities),
-            "avg_city_cost_index": float(round(avg_city_cost, 2)),
-        },
-    }
+        X_input = raw_df[feature_cols]
+        if self.scaler is not None:
+            X_input = self.scaler.transform(X_input)
+
+        predicted_val = float(self.model.predict(X_input)[0])
+        predicted_cost = round(max(100.0, predicted_val), 2)
+
+        # Confidence interval (+/- 15%)
+        low_cost = round(predicted_cost * 0.85, 2)
+        high_cost = round(predicted_cost * 1.15, 2)
+
+        # Estimated category breakdown
+        acc_ratio = 0.35 if acc_encoded == 1 else (0.25 if acc_encoded == 0 else 0.45)
+        meal_ratio = 0.25 if style_encoded == 1 else (0.20 if style_encoded == 0 else 0.30)
+        act_ratio = 0.18
+        flight_ratio = max(0.10, 1.0 - (acc_ratio + meal_ratio + act_ratio))
+
+        acc_est = round(predicted_cost * acc_ratio, 2)
+        meal_est = round(predicted_cost * meal_ratio, 2)
+        act_est = round(predicted_cost * act_ratio, 2)
+        flight_est = round(predicted_cost * flight_ratio, 2)
+
+        per_person = round(predicted_cost / num_travelers, 2)
+        per_day = round(predicted_cost / duration_days, 2)
+
+        season_warning = None
+        if season_str == "peak":
+            month_names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+            m_name = month_names[travel_month - 1] if 1 <= travel_month <= 12 else "Peak season"
+            season_warning = f"{m_name} is peak travel season. Costs may be 40-70% higher due to high seasonal demand."
+
+        return {
+            "predicted_total_cost": predicted_cost,
+            "confidence_interval": {
+                "low": low_cost,
+                "high": high_cost,
+            },
+            "cost_breakdown_estimate": {
+                "accommodation": acc_est,
+                "meals": meal_est,
+                "activities": act_est,
+                "flights": flight_est,
+            },
+            "per_person_cost": per_person,
+            "cost_per_day": per_day,
+            "season_warning": season_warning,
+            "feature_importance": {
+                "accommodation_tier": "HIGH",
+                "season": "HIGH",
+                "flight_distance_km": "MEDIUM",
+                "duration_days": "MEDIUM",
+                "cost_of_living_index": "MEDIUM",
+            },
+        }

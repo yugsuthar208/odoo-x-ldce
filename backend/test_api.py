@@ -367,26 +367,37 @@ async def run_integration_tests():
         assert "stop_breakdown" in b_data
         print(f"  [PASS] Budget calculated: Total = ${b_data['cost_breakdown']['total_cost']}, Per Day = ${b_data['per_day']['cost_per_day']}")
 
-        print("\n[TEST 24] GET /api/recommend/cities (Content-based filtering)")
-        rec_cities = await client.get("/api/recommend/cities", headers=headers)
+        print("\n[TEST 24] GET /api/recommend/cities (3-Layer Hybrid Recommender)")
+        rec_cities = await client.get("/api/recommend/cities?interests=history,art&budget=3000&travel_month=6", headers=headers)
         assert rec_cities.status_code == 200
-        recommendations = rec_cities.json()["data"]["recommendations"]
+        rec_payload = rec_cities.json()["data"]
+        assert "user_archetype" in rec_payload
+        recommendations = rec_payload["recommendations"]
         assert len(recommendations) > 0
-        assert "similarity_score" in recommendations[0]
-        print(f"  [PASS] City recommendation: Top pick '{recommendations[0]['city_name']}' (Score = {recommendations[0]['similarity_score']})")
+        assert "scores" in recommendations[0]
+        assert "why_recommended" in recommendations[0]
+        print(f"  [PASS] City recommendation: User Archetype='{rec_payload['user_archetype']}', Top pick='{recommendations[0]['city_name']}' (Score = {recommendations[0]['scores']['composite_score']})")
 
-        print("\n[TEST 25] GET /api/recommend/budget/{trip_id} (ML Budget Prediction)")
-        ml_pred_res = await client.get(f"/api/recommend/budget/{trip_id}", headers=headers)
+        print("\n[TEST 25] GET /api/recommend/budget/{trip_id} (XGBoost Budget Predictor)")
+        ml_pred_res = await client.get(f"/api/recommend/budget/{trip_id}?accommodation_tier=mid&travel_style=explorer", headers=headers)
         assert ml_pred_res.status_code == 200
         ml_data = ml_pred_res.json()["data"]
-        assert "predicted_total_cost" in ml_data
-        assert "calculated_total_cost" in ml_data
-        print(f"  [PASS] ML Prediction: Predicted = ${ml_data['predicted_total_cost']}, Calculated = ${ml_data['calculated_total_cost']}")
+        assert "prediction" in ml_data
+        assert "predicted_total_cost" in ml_data["prediction"]
+        assert "calculated_cost" in ml_data
+        print(f"  [PASS] ML Prediction: Predicted = ${ml_data['prediction']['predicted_total_cost']}, Calculated = ${ml_data['calculated_cost']}")
+
+        print("\n[TEST 26] GET /api/recommend/activities/{trip_id} (Semantic Activity Recommender)")
+        act_rec_res = await client.get(f"/api/recommend/activities/{trip_id}?interests=food,culture", headers=headers)
+        assert act_rec_res.status_code == 200
+        act_rec_data = act_rec_res.json()["data"]
+        assert "recommendations_by_stop" in act_rec_data
+        print(f"  [PASS] Activity recommendations generated across {len(act_rec_data['recommendations_by_stop'])} stops")
 
         # --------------------------------------------------------------------
         # 13. DUPLICATION & CLEANUP
         # --------------------------------------------------------------------
-        print("\n[TEST 26] POST /api/trips/{id}/duplicate & DELETE /api/trips/{id}")
+        print("\n[TEST 27] POST /api/trips/{id}/duplicate & DELETE /api/trips/{id}")
         dup_res = await client.post(f"/api/trips/{trip_id}/duplicate", headers=headers)
         assert dup_res.status_code == 201
         dup_id = dup_res.json()["data"]["id"]
@@ -399,7 +410,7 @@ async def run_integration_tests():
         print("  [PASS] Trip duplication and cascading deletion verified")
 
         print("\n========================================================")
-        print("[SUCCESS] ALL 26 INTEGRATION TESTS PASSED SUCCESSFULLY (100%)!")
+        print("[SUCCESS] ALL 27 INTEGRATION TESTS PASSED SUCCESSFULLY (100%)!")
         print("========================================================\n")
 
 

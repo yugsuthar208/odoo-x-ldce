@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +7,8 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import Base, engine
-from app.ml.budget_predictor import get_or_load_model
+from app.ml.budget_predictor import BudgetPredictor
+from app.ml.recommender import HybridRecommender
 from app.routes import (
     activities_router,
     auth_router,
@@ -21,21 +23,30 @@ from app.routes import (
     users_router,
 )
 
+logger = logging.getLogger("GlobeTrotterAPI")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Application lifespan events:
     - Automatically creates/synchronizes all database tables.
-    - Preloads Scikit-Learn machine learning budget model.
+    - Preloads Scikit-Learn / XGBoost and SentenceTransformer models into app.state.
     - Logs startup and teardown messages.
     """
     print("[GlobeTrotter API] Initializing database schema...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    print("[GlobeTrotter API] Initializing ML models...")
-    get_or_load_model()
+    print("[GlobeTrotter API] Initializing upgraded ML modules...")
+    app.state.budget_predictor = BudgetPredictor()
+    if not app.state.budget_predictor.load():
+        logger.warning("ML BudgetPredictor not found. Run python app/ml/train.py first.")
+
+    app.state.recommender = HybridRecommender()
+    if not app.state.recommender.load():
+        logger.warning("ML HybridRecommender not found. Run python app/ml/train.py first.")
+
     print("GlobeTrotter API started")
 
     yield
@@ -48,7 +59,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="GlobeTrotter API",
     version="1.0.0",
-    description="Personalized Travel Planning Platform",
+    description="Personalized Travel Planning Platform with Machine Learning & AI Intelligence",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",

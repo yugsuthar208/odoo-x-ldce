@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -12,6 +12,9 @@ class ActivityBase(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     image_url: Optional[str] = None
+    tags: List[str] = []
+    vibe: Optional[str] = "relaxing"
+    best_for: List[str] = []
 
     @property
     def cost(self) -> float:
@@ -33,6 +36,9 @@ class ActivityCreate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     image_url: Optional[str] = None
+    tags: List[str] = []
+    vibe: Optional[str] = "relaxing"
+    best_for: List[str] = []
 
 
 class ActivityOut(ActivityBase):

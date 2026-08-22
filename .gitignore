@@ -56,3 +56,8 @@ htmlcov/
 # Operating System Files
 .DS_Store
 Thumbs.db
+
+# Large Model Caches & Node Modules
+backend/app/ml/models/sentence_model/
+node_modules/
+.npm/

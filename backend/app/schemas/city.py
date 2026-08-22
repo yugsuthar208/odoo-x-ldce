@@ -14,6 +14,14 @@ class CityBase(BaseModel):
     latitude: Optional[float] = 0.0
     longitude: Optional[float] = 0.0
     image_url: Optional[str] = None
+    tags: List[str] = []
+    vibe_tags: List[str] = []
+    climate_type: Optional[str] = "temperate"
+    best_months: List[str] = []
+    safety_index: float = Field(default=75.0, ge=0.0, le=100.0)
+    budget_tier: Optional[str] = "mid-range"
+    rent_index: Optional[float] = 50.0
+    restaurant_price_index: Optional[float] = 60.0
 
 
 class CityCreate(CityBase):

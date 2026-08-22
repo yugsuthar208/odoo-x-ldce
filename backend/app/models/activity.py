@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Text, Float, ForeignKey
+from sqlalchemy import Column, String, Text, Float, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -19,6 +19,11 @@ class Activity(Base):
     longitude = Column(Float, nullable=True)
     image_url = Column(String(512), nullable=True)
 
+    # ML & Vibe Attributes
+    tags = Column(JSON, default=list, nullable=False)       # e.g. ["outdoor", "cultural", "foodie"]
+    vibe = Column(String(50), default="relaxing")           # thrilling, relaxing, immersive, iconic
+    best_for = Column(JSON, default=list, nullable=False)   # e.g. ["solo", "couple", "family", "group"]
+
     # Relationships
     city = relationship("City", back_populates="activities")
     itinerary_items = relationship("ItineraryItem", back_populates="activity", cascade="all, delete-orphan")
@@ -26,7 +31,6 @@ class Activity(Base):
 
     @property
     def cost(self) -> float:
-        """Alias for estimated_cost."""
         return self.estimated_cost
 
     @cost.setter
@@ -35,7 +39,6 @@ class Activity(Base):
 
     @property
     def type(self) -> str:
-        """Alias for category."""
         return self.category
 
     @type.setter

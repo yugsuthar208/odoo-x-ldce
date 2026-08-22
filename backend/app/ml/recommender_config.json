@@ -1,0 +1,32 @@
+{
+  "scoring_weights": {
+    "content_similarity": 0.30,
+    "interest_match": 0.25,
+    "budget_fit": 0.20,
+    "seasonality": 0.15,
+    "popularity": 0.05,
+    "safety": 0.05
+  },
+  "archetype_labels": {
+    "0": "Budget Backpacker",
+    "1": "Cultural Historian",
+    "2": "Adventure Seeker",
+    "3": "Luxury Foodie",
+    "4": "Family Explorer"
+  },
+  "season_map": {
+    "peak": [6, 7, 8, 12],
+    "shoulder": [4, 5, 9, 10],
+    "off_peak": [1, 2, 3, 11]
+  },
+  "seasonality_multipliers": {
+    "peak": 1.5,
+    "shoulder": 1.2,
+    "off_peak": 1.0
+  },
+  "accommodation_cost_multipliers": {
+    "budget": 0.4,
+    "mid": 0.8,
+    "luxury": 2.0
+  }
+}
