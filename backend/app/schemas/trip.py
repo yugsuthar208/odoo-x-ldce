@@ -12,8 +12,11 @@ class TripBase(BaseModel):
     start_date: date
     end_date: date
     cover_photo: Optional[str] = None
+    origin_city: Optional[str] = "Mumbai"
+    num_travelers: Optional[float] = 1
+    transit_mode: Optional[str] = "train"
     total_budget: Optional[float] = Field(None, ge=0.0)
-    currency: str = "USD"
+    currency: str = "INR"
     visibility: str = "private"  # private, public, friends
     status: str = "draft"        # draft, upcoming, ongoing, completed
 
@@ -29,8 +32,11 @@ class TripCreate(BaseModel):
     start_date: date
     end_date: date
     cover_photo: Optional[str] = None
+    origin_city: Optional[str] = "Mumbai"
+    num_travelers: Optional[float] = 1
+    transit_mode: Optional[str] = "train"
     total_budget: Optional[float] = Field(None, ge=0.0)
-    currency: Optional[str] = "USD"
+    currency: Optional[str] = "INR"
     visibility: Optional[str] = "private"
     status: Optional[str] = "draft"
     is_public: Optional[bool] = None  # alias for visibility="public"
@@ -43,6 +49,9 @@ class TripUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     cover_photo: Optional[str] = None
+    origin_city: Optional[str] = None
+    num_travelers: Optional[float] = None
+    transit_mode: Optional[str] = None
     total_budget: Optional[float] = Field(None, ge=0.0)
     currency: Optional[str] = None
     visibility: Optional[str] = None
@@ -59,8 +68,11 @@ class TripOut(BaseModel):
     start_date: date
     end_date: date
     cover_photo: Optional[str] = None
+    origin_city: Optional[str] = "Mumbai"
+    num_travelers: Optional[float] = 1
+    transit_mode: Optional[str] = "train"
     total_budget: Optional[float] = None
-    currency: str = "USD"
+    currency: str = "INR"
     visibility: str = "private"
     status: str = "draft"
     created_at: datetime

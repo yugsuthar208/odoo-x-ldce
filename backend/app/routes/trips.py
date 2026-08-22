@@ -113,21 +113,60 @@ async def get_public_trip_view(
 
 @router.get(
     "/{id}",
-    response_model=APIResponse[TripDetailOut],
+    response_model=APIResponse[dict],
     status_code=status.HTTP_200_OK,
-    summary="Get single trip with stops and budget",
+    summary="Get single trip with complete workspace state",
 )
 async def get_trip(
     id: str,
     current_user: Optional[User] = Depends(get_optional_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Retrieves full details of a specific trip."""
+    """Retrieves full trip workspace including transit, stays, activities, and budget."""
     trip = await get_trip_detail(db=db, trip_id=id, current_user=current_user)
+    
+    from app.services.budget_service import BudgetService
+    budget = await BudgetService.calculate_authoritative_budget(db, id)
+    
+    # Refresh trip to get relationships if needed
+    await db.refresh(trip, ["stops", "transit_legs"])
+    
     return APIResponse(
         success=True,
-        data=trip,
-        message="Trip retrieved successfully",
+        data={
+            "trip": {
+                "id": trip.id,
+                "title": trip.title,
+                "description": trip.description,
+                "start_date": trip.start_date,
+                "end_date": trip.end_date,
+                "origin_city": trip.origin_city,
+                "num_travelers": trip.num_travelers,
+                "currency": trip.currency,
+                "status": trip.dynamic_status(),
+                "budget_target": trip.budget_target,
+            },
+            "stops": [{"id": s.id, "city_id": s.city_id, "city_name": s.city.name if s.city else None, "arrival_date": s.arrival_date, "departure_date": s.departure_date, "stop_order": s.stop_order} for s in sorted(trip.stops, key=lambda x: x.stop_order)],
+            "transit_legs": [{
+                "id": leg.id,
+                "sequence": leg.sequence,
+                "from_stop_id": leg.from_stop_id,
+                "to_stop_id": leg.to_stop_id,
+                "selected_option_id": leg.selected_option_id,
+                "options": [
+                    {
+                        "id": opt.id,
+                        "mode": opt.mode,
+                        "provider": opt.provider,
+                        "duration_hours": opt.duration_hours,
+                        "total_estimated_cost": opt.total_estimated_cost,
+                        "cost_per_person": opt.cost_per_person,
+                    } for opt in leg.options
+                ]
+            } for leg in sorted(trip.transit_legs, key=lambda x: x.sequence)],
+            "budget": budget,
+        },
+        message="Trip detail retrieved successfully",
     )
 
 

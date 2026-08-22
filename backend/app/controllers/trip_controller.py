@@ -12,10 +12,13 @@ from app.models.budget import Budget
 from app.models.city import City
 from app.models.expense import Expense
 from app.models.itinerary_item import ItineraryItem
+from app.models.shared_link import SharedLink
 from app.models.stop import TripStop
 from app.models.trip import Trip
 from app.models.trip_collaborator import TripCollaborator
 from app.models.user import User
+from app.models.transit import TransitLeg
+from app.models.stay import TripStay
 from app.schemas.trip import TripCreate, TripUpdate
 from app.services.audit_service import log_audit_event
 from app.services.websocket_manager import ws_manager
@@ -40,6 +43,9 @@ async def get_trip_and_check_access(
             selectinload(Trip.budget),
             selectinload(Trip.stops).selectinload(TripStop.city),
             selectinload(Trip.stops).selectinload(TripStop.itinerary_items).selectinload(ItineraryItem.activity),
+            selectinload(Trip.stops).selectinload(TripStop.stay_info),
+            selectinload(Trip.transit_legs).selectinload(TransitLeg.options),
+            selectinload(Trip.transit_legs).selectinload(TransitLeg.selected_option),
             selectinload(Trip.collaborators).selectinload(TripCollaborator.user),
             selectinload(Trip.expenses),
         )
@@ -165,8 +171,11 @@ async def create_trip(db: AsyncSession, user_id: str, payload: TripCreate) -> Tr
         start_date=payload.start_date,
         end_date=payload.end_date,
         cover_photo=payload.cover_photo,
+        origin_city=payload.origin_city or "Mumbai",
+        num_travelers=payload.num_travelers or 1,
+        transit_mode=payload.transit_mode or "train",
         total_budget=payload.total_budget,
-        currency=payload.currency or "USD",
+        currency=payload.currency or "INR",
         visibility=visibility,
         status=status_val,
     )
@@ -223,6 +232,12 @@ async def update_trip(
         trip.end_date = payload.end_date
     if payload.cover_photo is not None:
         trip.cover_photo = payload.cover_photo
+    if payload.origin_city is not None:
+        trip.origin_city = payload.origin_city
+    if payload.num_travelers is not None:
+        trip.num_travelers = payload.num_travelers
+    if payload.transit_mode is not None:
+        trip.transit_mode = payload.transit_mode
     if payload.total_budget is not None:
         trip.total_budget = payload.total_budget
         if trip.budget:
@@ -234,6 +249,11 @@ async def update_trip(
     elif payload.is_public is not None:
         trip.visibility = "public" if payload.is_public else "private"
     if payload.status is not None:
+        if not trip.can_transition_to(payload.status):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Illegal trip status transition from '{trip.status}' to '{payload.status}'. Use lifecycle endpoints.",
+            )
         trip.status = payload.status
 
     if trip.start_date > trip.end_date:
@@ -306,7 +326,22 @@ async def duplicate_trip(db: AsyncSession, trip_id: str, current_user: User) -> 
     """
     Copies entire trip including stops, assigned itinerary items, and budget configuration as a new draft.
     """
-    source_trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="viewer")
+    stmt = (
+        select(Trip)
+        .options(
+            selectinload(Trip.stops).selectinload(TripStop.itinerary_items),
+            selectinload(Trip.budget),
+            selectinload(Trip.shared_links),
+        )
+        .where(Trip.id == trip_id)
+    )
+    res = await db.execute(stmt)
+    source_trip = res.scalar_one_or_none()
+    if not source_trip:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    if source_trip.user_id != current_user.id and source_trip.visibility != "public" and len(source_trip.shared_links) == 0:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to copy this trip")
 
     new_trip = Trip(
         user_id=current_user.id,
@@ -390,133 +425,11 @@ async def calculate_trip_budget(
     db: AsyncSession,
 ) -> dict:
     """
-    Computes upgraded 12-step budget forecast and breakdown.
+    Computes budget by delegating to the authoritative BudgetService.
     """
-    trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="viewer")
-
-    days_diff = (trip.end_date - trip.start_date).days
-    total_trip_days = max(1, days_diff if days_diff > 0 else 1)
-
-    if trip.budget is None:
-        trip.budget = Budget(
-            trip_id=trip.id,
-            transport_cost=0.0,
-            stay_cost=0.0,
-            meals_cost=0.0,
-            misc_cost=0.0,
-            total_budget_limit=trip.total_budget,
-        )
-        db.add(trip.budget)
-        await db.flush()
-
-    stop_breakdown = []
-    has_stops = len(trip.stops) > 0
-
-    if has_stops:
-        for stop in trip.stops:
-            stop_days_diff = (stop.departure_date - stop.arrival_date).days
-            days_at_stop = max(1, stop_days_diff if stop_days_diff > 0 else 1)
-
-            city_cost_index = settings.DEFAULT_CITY_COST_INDEX if hasattr(settings, "DEFAULT_CITY_COST_INDEX") else 80.0
-            city_name = "Unknown City"
-            if stop.city:
-                city_name = stop.city.name
-                if stop.city.cost_index is not None:
-                    city_cost_index = float(stop.city.cost_index)
-
-            stop_stay_cost = round(city_cost_index * days_at_stop, 2)
-
-            stop_activities_cost = 0.0
-            for item in stop.itinerary_items:
-                stop_activities_cost += item.effective_cost
-            stop_activities_cost = round(stop_activities_cost, 2)
-
-            stop_meals_cost = round(settings.MEALS_PER_DAY_USD * days_at_stop, 2)
-            stop_total = round(stop_stay_cost + stop_activities_cost + stop_meals_cost, 2)
-
-            stop_breakdown.append({
-                "stop_id": stop.id,
-                "city_name": city_name,
-                "days": days_at_stop,
-                "stay_cost": stop_stay_cost,
-                "activities_cost": stop_activities_cost,
-                "meals_cost": stop_meals_cost,
-                "stop_total": stop_total,
-            })
-
-        stay_cost = round(sum(s["stay_cost"] for s in stop_breakdown), 2)
-        activities_cost = round(sum(s["activities_cost"] for s in stop_breakdown), 2)
-        meals_cost = round(settings.MEALS_PER_DAY_USD * total_trip_days, 2)
-    else:
-        stay_cost = 0.0
-        activities_cost = 0.0
-        meals_cost = 0.0
-
-    transport_cost = round(float(trip.budget.transport_cost or 0.0), 2)
-    misc_cost = round(float(trip.budget.misc_cost or 0.0), 2)
-    total_cost = round(stay_cost + activities_cost + meals_cost + transport_cost + misc_cost, 2)
-    cost_per_day = round(total_cost / total_trip_days, 2)
-
-    today_date = date.today()
-    days_until_trip = (trip.start_date - today_date).days
-
-    trip_status = trip.dynamic_status()
-    savings_needed_per_day = round(total_cost / days_until_trip, 2) if days_until_trip > 0 else None
-
-    total_budget_limit = trip.budget.total_budget_limit or trip.total_budget
-    if total_budget_limit is not None:
-        total_budget_limit = round(float(total_budget_limit), 2)
-        is_over_budget = total_cost > total_budget_limit
-        budget_overage = round(total_cost - total_budget_limit, 2)
-        budget_remaining = round(total_budget_limit - total_cost, 2)
-    else:
-        is_over_budget = None
-        budget_overage = None
-        budget_remaining = None
-
-    if total_cost > 0:
-        cost_dist_percent = {
-            "stay": round((stay_cost / total_cost) * 100, 1),
-            "activities": round((activities_cost / total_cost) * 100, 1),
-            "meals": round((meals_cost / total_cost) * 100, 1),
-            "transport": round((transport_cost / total_cost) * 100, 1),
-            "misc": round((misc_cost / total_cost) * 100, 1),
-        }
-    else:
-        cost_dist_percent = {"stay": 0.0, "activities": 0.0, "meals": 0.0, "transport": 0.0, "misc": 0.0}
-
-    trip.budget.stay_cost = stay_cost
-    trip.budget.meals_cost = meals_cost
-    db.add(trip.budget)
-    await db.flush()
-
-    return {
-        "trip_id": trip.id,
-        "trip_title": trip.title,
-        "trip_status": trip_status,
-        "total_trip_days": total_trip_days,
-        "days_until_trip": days_until_trip if days_until_trip >= 0 else None,
-        "cost_breakdown": {
-            "stay_cost": stay_cost,
-            "activities_cost": activities_cost,
-            "meals_cost": meals_cost,
-            "transport_cost": transport_cost,
-            "misc_cost": misc_cost,
-            "total_cost": total_cost,
-        },
-        "per_day": {
-            "cost_per_day": cost_per_day,
-            "savings_needed_per_day": savings_needed_per_day,
-        },
-        "budget_status": {
-            "total_budget_limit": total_budget_limit,
-            "is_over_budget": is_over_budget,
-            "budget_overage": budget_overage,
-            "budget_remaining": budget_remaining,
-        },
-        "cost_distribution_percent": cost_dist_percent,
-        "stop_breakdown": stop_breakdown,
-    }
+    await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="viewer")
+    from app.services.budget_service import BudgetService
+    return await BudgetService.calculate_authoritative_budget(db, trip_id)
 
 
 async def calculate_map_route(

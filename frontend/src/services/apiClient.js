@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8000/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 const TOKEN_KEY = "tripora_token";
 
 const apiClient = axios.create({
@@ -28,11 +28,12 @@ apiClient.interceptors.response.use(
       // Let AuthContext and ProtectedRoute handle the redirect
     }
     const message =
+      error.response?.data?.detail ||
       error.response?.data?.error ||
       error.response?.data?.message ||
       error.message ||
       "An unexpected error occurred";
-    return Promise.reject(new Error(message));
+    return Promise.reject(new Error(typeof message === "string" ? message : JSON.stringify(message)));
   }
 );
 

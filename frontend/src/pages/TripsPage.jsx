@@ -10,11 +10,25 @@ import { useToast } from "../components/common/Toast";
 
 const TABS = ["all", "upcoming", "ongoing", "completed", "draft"];
 
+const INDIAN_ORIGIN_CITIES = [
+  "Mumbai", "Delhi", "Bengaluru", "Ahmedabad", "Pune", "Jaipur", 
+  "Kolkata", "Chennai", "Hyderabad", "Surat", "Chandigarh", "Lucknow", "Indore", "Kochi"
+];
+
 function TripCreateModal({ onClose, onCreated }) {
   const { addToast } = useToast();
   const [form, setForm] = useState({
-    title: "", description: "", start_date: "", end_date: "",
-    total_budget: "", currency: "USD", visibility: "private", status: "draft",
+    title: "", 
+    description: "", 
+    start_date: "", 
+    end_date: "",
+    origin_city: "Mumbai",
+    num_travelers: 1,
+    transit_mode: "train",
+    total_budget: "", 
+    currency: "INR", 
+    visibility: "private", 
+    status: "draft",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -27,10 +41,11 @@ function TripCreateModal({ onClose, onCreated }) {
     try {
       const payload = {
         ...form,
+        num_travelers: parseInt(form.num_travelers) || 1,
         total_budget: form.total_budget ? parseFloat(form.total_budget) : null,
       };
       const res = await tripService.createTrip(payload);
-      addToast({ message: "Trip created!" });
+      addToast({ message: "Trip created successfully!" });
       onCreated(res.data);
     } catch (err) {
       setError(err.message);
@@ -40,22 +55,40 @@ function TripCreateModal({ onClose, onCreated }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }} onClick={onClose} />
-      <div className="card animate-fadeUp" style={{ position: "relative", zIndex: 1, width: "min(520px, 92vw)", padding: 32, maxHeight: "90vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <h2>New Trip</h2>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }} onClick={onClose} />
+      <div className="card animate-fadeUp" style={{ position: "relative", zIndex: 1, width: "min(560px, 92vw)", padding: 32, maxHeight: "90vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tripora Bharat</span>
+            <h2 style={{ marginTop: 2 }}>Plan a New Journey</h2>
+          </div>
           <button className="btn btn--icon btn--ghost" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label className="label" htmlFor="ct-title">Title *</label>
-            <input id="ct-title" className="input" value={form.title} onChange={set("title")} placeholder="Summer in Europe" required />
+            <label className="label" htmlFor="ct-title">Trip Title *</label>
+            <input id="ct-title" className="input" value={form.title} onChange={set("title")} placeholder="e.g. Royal Rajasthan Heritage Trail" required />
           </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12 }}>
+            <div>
+              <label className="label" htmlFor="ct-origin">Starting City (Origin) *</label>
+              <select id="ct-origin" className="input" value={form.origin_city} onChange={set("origin_city")}>
+                {INDIAN_ORIGIN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="ct-travelers">Travelers / Group Size</label>
+              <input id="ct-travelers" className="input" type="number" min="1" max="50" value={form.num_travelers} onChange={set("num_travelers")} required />
+            </div>
+          </div>
+
           <div>
             <label className="label" htmlFor="ct-desc">Description</label>
-            <textarea id="ct-desc" className="input" value={form.description} onChange={set("description")} placeholder="A brief description..." rows={2} style={{ resize: "vertical" }} />
+            <textarea id="ct-desc" className="input" rows={2} value={form.description} onChange={set("description")} placeholder="Trip notes, local thali wishlist, or group goals..." />
           </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label className="label" htmlFor="ct-start">Start Date *</label>
@@ -66,25 +99,20 @@ function TripCreateModal({ onClose, onCreated }) {
               <input id="ct-end" className={`input ${form.start_date && form.end_date && form.end_date < form.start_date ? "input--error" : ""}`} type="date" value={form.end_date} onChange={set("end_date")} required />
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12 }}>
             <div>
-              <label className="label" htmlFor="ct-budget">Budget (optional)</label>
-              <input id="ct-budget" className="input" type="number" value={form.total_budget} onChange={set("total_budget")} placeholder="5000" min="0" />
+              <label className="label" htmlFor="ct-budget">Total Budget (₹ INR)</label>
+              <input id="ct-budget" className="input" type="number" value={form.total_budget} onChange={set("total_budget")} placeholder="25000" min="0" />
             </div>
             <div>
-              <label className="label" htmlFor="ct-currency">Currency</label>
-              <select id="ct-currency" className="input" value={form.currency} onChange={set("currency")}>
-                {["USD","EUR","GBP","JPY","INR","CAD","AUD"].map((c) => <option key={c}>{c}</option>)}
+              <label className="label" htmlFor="ct-vis">Visibility</label>
+              <select id="ct-vis" className="input" value={form.visibility} onChange={set("visibility")}>
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+                <option value="friends">Friends</option>
               </select>
             </div>
-          </div>
-          <div>
-            <label className="label" htmlFor="ct-vis">Visibility</label>
-            <select id="ct-vis" className="input" value={form.visibility} onChange={set("visibility")}>
-              <option value="private">Private</option>
-              <option value="public">Public</option>
-              <option value="friends">Friends</option>
-            </select>
           </div>
           {error && <p style={{ color: "var(--danger)", fontSize: "0.875rem" }}>{error}</p>}
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>

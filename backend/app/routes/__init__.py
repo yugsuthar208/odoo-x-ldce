@@ -14,6 +14,8 @@ from app.routes.websockets import router as websockets_router
 from app.routes.metrics import router as metrics_router
 from app.routes.audit import router as audit_router
 from app.routes.oauth import router as oauth_router
+from app.routes.places import router as places_router
+from app.routes.transit import router as transit_router
 
 __all__ = [
     "auth_router",
@@ -32,4 +34,6 @@ __all__ = [
     "metrics_router",
     "audit_router",
     "oauth_router",
+    "places_router",
+    "transit_router",
 ]

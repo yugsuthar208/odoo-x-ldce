@@ -98,4 +98,36 @@ export const tripService = {
 
   removeCollaborator: (tripId, userId) =>
     apiClient.delete(`/trips/${tripId}/collaborators/${userId}`).then((r) => r.data),
+
+  /* ---- Stays ---- */
+  getTripStays: (tripId) =>
+    apiClient.get(`/trips/${tripId}/stays`).then((r) => r.data),
+
+  selectStay: (tripId, payload) =>
+    apiClient.post(`/trips/${tripId}/stays`, payload).then((r) => r.data),
+
+  /* ---- Budget Optimization ---- */
+  recalculateBudget: (tripId) =>
+    apiClient.post(`/trips/${tripId}/budget/recalculate`).then((r) => r.data),
+
+  optimizeBudget: (tripId) =>
+    apiClient.post(`/trips/${tripId}/budget/optimize`).then((r) => r.data),
+
+  applyOptimization: (tripId, recId) =>
+    apiClient.post(`/trips/${tripId}/budget/optimize/${recId}/apply`).then((r) => r.data),
+
+  /* ---- Indian Multi-Modal Transit & Routes ---- */
+  getTripTransit: (tripId) =>
+    apiClient.get(`/trips/${tripId}/transit`).then((r) => r.data),
+
+  selectTransitOption: (tripId, legId, selectedOptionId) =>
+    apiClient.patch(`/trips/${tripId}/transit/${legId}`, { selected_option_id: selectedOptionId }).then((r) => r.data),
+
+  /* ---- Live DuckDuckGo Food & Stays Recommendations ---- */
+  getLiveFood: (city, budgetTier = 'mid') =>
+    apiClient.get('/places/live-food', { params: { city, budget_tier: budgetTier } }).then((r) => r.data),
+
+  getLiveStays: (city, budgetTier = 'mid') =>
+    apiClient.get('/places/live-stays', { params: { city, budget_tier: budgetTier } }).then((r) => r.data),
 };
+

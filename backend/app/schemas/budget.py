@@ -70,14 +70,28 @@ class CostDistributionPercentOut(BaseModel):
     misc: float
 
 
+class PerPersonOut(BaseModel):
+    """Per-person cost metrics for group trips."""
+    total_cost_per_person: float
+    stay_per_person: float
+    meals_per_person: float
+    activities_per_person: float
+    transport_per_person: float
+
+
 class BudgetCalculationOut(BaseModel):
     """Comprehensive budget analysis and cost forecast for a trip."""
     trip_id: str
     trip_title: str
     trip_status: Optional[str] = "upcoming"
+    origin_city: Optional[str] = "Mumbai"
+    num_travelers: Optional[float] = 1
+    rooms_allocated: Optional[int] = 1
+    currency: Optional[str] = "INR"
     total_trip_days: int
     days_until_trip: Optional[int] = None
     cost_breakdown: CostBreakdownOut
+    per_person: Optional[PerPersonOut] = None
     per_day: PerDayOut
     budget_status: BudgetStatusOut
     stop_breakdown: List[StopBreakdownOut] = []

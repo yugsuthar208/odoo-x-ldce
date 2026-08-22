@@ -1,21 +1,114 @@
 country,year,tourist_arrivals
-France,2023,25000000
-Italy,2023,25000000
-Spain,2023,25000000
-Netherlands,2023,25000000
-Czech Republic,2023,25000000
-Austria,2023,25000000
-Portugal,2023,25000000
-Greece,2023,25000000
-Japan,2023,25000000
-Thailand,2023,25000000
-Indonesia,2023,25000000
-Singapore,2023,25000000
-Turkey,2023,25000000
-United Arab Emirates,2023,25000000
-India,2023,25000000
-United States,2023,25000000
-Mexico,2023,25000000
-Argentina,2023,25000000
-Mexico,2023,25000000
-Canada,2023,25000000
+Africa Eastern and Southern,2019,39826701.4025488
+Africa Eastern and Southern,2018,41189145.2687099
+Africa Eastern and Southern,2017,38258347.875597
+Africa Eastern and Southern,2016,37645887.774466
+Africa Eastern and Southern,2015,35318681.4645499
+Africa Eastern and Southern,2014,35738392.2140136
+Africa Eastern and Southern,2013,34426632.6796927
+Africa Eastern and Southern,2012,32748552.3906752
+Africa Eastern and Southern,2011,31650243.8841427
+Africa Eastern and Southern,2010,29071500.5114406
+Africa Eastern and Southern,2009,25964418.0695383
+Africa Eastern and Southern,2008,25413098.2674515
+Africa Eastern and Southern,2007,25114898.4367538
+Africa Eastern and Southern,2006,22650320.8799121
+Africa Eastern and Southern,2005,19917566.3729011
+Africa Eastern and Southern,2004,18745951.1627553
+Africa Eastern and Southern,2003,17844385.2820236
+Africa Eastern and Southern,2002,17383375.4157474
+Africa Eastern and Southern,2001,15854696.2860028
+Africa Eastern and Southern,2000,15353177.301305
+Africa Eastern and Southern,1999,15309377.8420342
+Africa Eastern and Southern,1998,14403851.8325464
+Africa Eastern and Southern,1997,13456245.9733439
+Africa Eastern and Southern,1996,13088654.2040979
+Africa Eastern and Southern,1995,11583544.7058296
+Africa Western and Central,2016,13150775.3380124
+Africa Western and Central,2015,13311681.7254405
+Africa Western and Central,2014,10544624.002472
+Africa Western and Central,2013,10085818.9405127
+Africa Western and Central,2012,10221030.3977021
+Africa Western and Central,2011,8902380.17844765
+Africa Western and Central,2010,11070796.4548825
+Africa Western and Central,2009,10569712.6444844
+Africa Western and Central,2008,10157585.7759999
+Africa Western and Central,2007,9389591.49388354
+Africa Western and Central,2006,6955607.10540813
+Africa Western and Central,2005,6320831.90878145
+Africa Western and Central,2004,5839376.58498229
+Africa Western and Central,2003,5013049.70972226
+Africa Western and Central,2002,4697120.10955494
+Africa Western and Central,2001,4615887.34170828
+Africa Western and Central,2000,4162850.00307587
+Africa Western and Central,1999,3897975.03054576
+Africa Western and Central,1998,3422652.33694757
+Africa Western and Central,1997,3243144.34732534
+Africa Western and Central,1996,3027134.7330724
+Africa Western and Central,1995,2670705.93365591
+Arab World,2019,142447574.174804
+Arab World,2018,131892640.892491
+Arab World,2017,122153139.690839
+Arab World,2016,115219915.34879
+Arab World,2015,122563985.747808
+Arab World,2014,130620704.114
+Arab World,2013,122579989.796455
+Arab World,2012,122650455.800156
+Arab World,2011,109790026.216047
+Arab World,2010,130381603.794372
+Arab World,2009,113944262.080253
+Arab World,2008,115508623.576591
+Arab World,2007,99187198.0437057
+Arab World,2006,89387603.6153018
+Arab World,2005,82979842.6266383
+Arab World,2004,80985285.3012514
+Caribbean small states,2019,19819087.2645395
+Caribbean small states,2018,19669834.9167994
+Caribbean small states,2017,18488000.0
+Caribbean small states,2016,17638000.0
+Caribbean small states,2015,17200000.0
+Caribbean small states,2014,16644000.0
+Caribbean small states,2013,15674000.0
+Caribbean small states,2012,15540000.0
+Caribbean small states,2011,15421000.0
+Caribbean small states,2010,14853000.0
+Caribbean small states,2009,14132000.0
+Caribbean small states,2008,13494000.0
+Caribbean small states,2007,13774000.0
+Caribbean small states,2006,13524000.0
+Caribbean small states,2005,13151761.2565445
+Caribbean small states,2004,13943780.104712
+Caribbean small states,2003,12223187.434555
+Caribbean small states,2002,11075114.1361257
+Caribbean small states,2001,10923386.3874346
+Caribbean small states,2000,11115377.4429236
+Caribbean small states,1999,9901109.40611303
+Caribbean small states,1998,9482950.87688024
+Caribbean small states,1997,9357302.28035596
+Caribbean small states,1996,9027600.36307626
+Caribbean small states,1995,8608436.64507127
+Central Europe and the Baltics,2019,314638365.070248
+Central Europe and the Baltics,2018,301502122.473578
+Central Europe and the Baltics,2017,293799709.735875
+Central Europe and the Baltics,2016,282858334.211699
+Central Europe and the Baltics,2015,265484205.126514
+Central Europe and the Baltics,2014,247176982.109666
+Central Europe and the Baltics,2013,239484451.83792
+Central Europe and the Baltics,2012,230513827.817575
+Central Europe and the Baltics,2011,219665361.603973
+Central Europe and the Baltics,2010,211503443.345688
+Central Europe and the Baltics,2009,205767642.373582
+Central Europe and the Baltics,2008,217002009.902587
+Central Europe and the Baltics,2007,222544621.751542
+Central Europe and the Baltics,2006,215062885.918177
+Central Europe and the Baltics,2005,208136165.233864
+Central Europe and the Baltics,2004,200553517.555216
+Central Europe and the Baltics,2003,177955845.419315
+Central Europe and the Baltics,2002,173510081.363983
+Central Europe and the Baltics,2001,182538824.414625
+Central Europe and the Baltics,2000,206946379.303475
+Central Europe and the Baltics,1999,200062962.010076
+Central Europe and the Baltics,1998,200151256.841019
+Central Europe and the Baltics,1997,203579243.99372
+Central Europe and the Baltics,1996,199135866.285172
+Central Europe and the Baltics,1995,188652644.870749

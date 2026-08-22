@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Settings, Plus, LayoutList, Map as MapIcon, Calendar, Info, Share2, Users } from "lucide-react";
+import { ArrowLeft, Settings, Plus, LayoutList, Map as MapIcon, Calendar, Info, Share2, Users, Compass, Utensils, Train, MapPin } from "lucide-react";
 import { tripService } from "../services/tripService";
 import { TripMap } from "../components/map/TripMap";
 import { StopDetailBar } from "../components/map/StopDetailBar";
@@ -9,6 +9,8 @@ import { AddStopModal } from "../components/trips/AddStopModal";
 import { ActivityPickerModal } from "../components/activities/ActivityPickerModal";
 import TripBudget from "../components/budget/TripBudget";
 import TripCollab from "../components/trips/TripCollab";
+import TransitOptimizer from "../components/trips/TransitOptimizer";
+import LiveFoodStayFinder from "../components/trips/LiveFoodStayFinder";
 import { ActivityList } from "../components/activities/ActivityList";
 import { ErrorState } from "../components/common/ErrorState";
 import { PageLoader, LoadingSpinner } from "../components/common/LoadingSpinner";
@@ -16,8 +18,10 @@ import { useToast } from "../components/common/Toast";
 
 const TABS = [
   { id: "itinerary", label: "Itinerary", icon: LayoutList },
-  { id: "map", label: "Map View", icon: MapIcon },
+  { id: "transit", label: "Transit", icon: Train },
+  { id: "discover", label: "Food & Stays", icon: Utensils },
   { id: "budget", label: "Budget", icon: Info },
+  { id: "map", label: "Map View", icon: MapIcon },
   { id: "collab", label: "Team", icon: Users },
 ];
 
@@ -40,7 +44,10 @@ export default function TripDetailPage() {
   const loadTrip = useCallback(() => {
     tripService.getTrip(id)
       .then(res => {
-        const tripData = res?.data || res;
+        const rawData = res?.data || res;
+        const tripData = rawData?.trip 
+          ? { ...rawData.trip, stops: rawData.stops || rawData.trip.stops || [], budget_summary: rawData.budget, transit_legs: rawData.transit_legs || [], stays: rawData.stays || [], warnings: rawData.warnings || [] }
+          : rawData;
         setTrip(tripData);
         if (tripData?.stops?.length > 0) {
           setSelectedStopId(prev => (prev && tripData.stops.some(s => s.id === prev) ? prev : tripData.stops[0].id));
@@ -111,6 +118,8 @@ export default function TripDetailPage() {
             <h1 style={{ fontSize: "1.25rem", margin: 0 }}>{trip.title}</h1>
             <div style={{ display: "flex", alignItems: "center", gap: 12, color: "var(--ink-soft)", fontSize: "0.8125rem", marginTop: 2 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Calendar size={12} /> {trip.start_date} - {trip.end_date}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--accent)" }}><MapPin size={12} /> From: {trip.origin_city || "Mumbai"}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Users size={12} /> {trip.num_travelers || 1} Travelers</span>
               <span className={`pill pill--${trip.status}`}>{trip.status}</span>
             </div>
           </div>
@@ -125,10 +134,10 @@ export default function TripDetailPage() {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         
         {/* Left Sidebar (Stops & Tabs) */}
-        <div style={{ width: 400, background: "var(--white)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        <div style={{ width: 440, background: "var(--white)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
           
           {/* Tab Navigation */}
-          <div style={{ display: "flex", padding: "16px 20px 0", gap: 24, borderBottom: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", padding: "16px 16px 0", gap: 16, borderBottom: "1px solid var(--border)", overflowX: "auto" }}>
             {TABS.map(t => {
               const Icon = t.icon;
               const active = activeTab === t.id;
@@ -137,19 +146,19 @@ export default function TripDetailPage() {
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
                   style={{
-                    display: "flex", alignItems: "center", gap: 6,
+                    display: "flex", alignItems: "center", gap: 5,
                     padding: "0 0 12px", borderBottom: active ? "2px solid var(--ink)" : "2px solid transparent",
                     color: active ? "var(--ink)" : "var(--ink-soft)",
-                    fontWeight: active ? 600 : 500, fontSize: "0.875rem"
+                    fontWeight: active ? 600 : 500, fontSize: "0.8125rem", whiteSpace: "nowrap"
                   }}
                 >
-                  <Icon size={16} /> {t.label}
+                  <Icon size={15} /> {t.label}
                 </button>
               );
             })}
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
             {activeTab === "itinerary" && (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -187,7 +196,20 @@ export default function TripDetailPage() {
               </>
             )}
 
-            {activeTab === "budget" && <TripBudget tripId={trip.id} />}
+            {activeTab === "transit" && (
+              <TransitOptimizer 
+                trip={trip} 
+                onRefresh={loadTrip}
+              />
+            )}
+
+            {activeTab === "discover" && (
+              <LiveFoodStayFinder 
+                cityName={selectedStop?.city?.name || stops[0]?.city?.name || "Goa"} 
+              />
+            )}
+
+            {activeTab === "budget" && <TripBudget tripId={trip.id} budget={trip.budget} onRefresh={loadTrip} />}
             {activeTab === "collab" && <TripCollab tripId={trip.id} visibility={trip.visibility} />}
             {activeTab === "map" && <div className="hide-desktop">Map view takes full screen on mobile.</div>}
           </div>

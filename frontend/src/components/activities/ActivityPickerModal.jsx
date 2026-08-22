@@ -76,7 +76,7 @@ export function ActivityPickerModal({ tripId, stopId, cityId, onClose, onAdded }
                   
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
                     <div style={{ display: "flex", gap: 16, color: "var(--ink-soft)", fontSize: "0.8125rem", fontWeight: 500 }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}><DollarSign size={14} /> {act.estimated_cost}</span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 2, fontWeight: 600, color: "var(--accent)" }}>₹{Number(act.estimated_cost || 0).toLocaleString('en-IN')}</span>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Clock size={14} /> {act.duration_hours}h</span>
                     </div>
                     <button className="btn btn--sm btn--primary" onClick={() => handleAdd(act)} disabled={saving === act.id}>

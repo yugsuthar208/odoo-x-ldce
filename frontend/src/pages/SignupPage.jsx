@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Globe } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -21,7 +21,7 @@ export default function SignupPage() {
     if (form.password !== form.confirm) { setError("Passwords do not match"); return; }
     setError(""); setLoading(true);
     try {
-      await signup({ full_name: form.full_name, email: form.email, password: form.password });
+      await signup({ name: form.full_name, full_name: form.full_name, email: form.email, password: form.password });
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);

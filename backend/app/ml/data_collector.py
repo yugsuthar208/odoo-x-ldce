@@ -20,28 +20,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_RAW_DIR = BASE_DIR / "data" / "raw"
 DATA_PROCESSED_DIR = BASE_DIR / "data" / "processed"
 
-# Default fallback reference dataset for 20+ global cities with real-world Numbeo & OpenStreetMap values
+# Reference dataset with comprehensive Indian destinations and realistic Numbeo & Indian travel index values
 SEED_CITIES_REF = [
-    {"city_name": "Paris", "country": "France", "region": "Europe", "cost_of_living_index": 82.5, "rent_index": 52.0, "restaurant_price_index": 85.0, "lat": 48.8566, "lon": 2.3522, "safety_index": 72.0, "budget_tier": "luxury"},
-    {"city_name": "Rome", "country": "Italy", "region": "Europe", "cost_of_living_index": 70.2, "rent_index": 38.5, "restaurant_price_index": 72.0, "lat": 41.9028, "lon": 12.4964, "safety_index": 68.0, "budget_tier": "mid-range"},
-    {"city_name": "Barcelona", "country": "Spain", "region": "Europe", "cost_of_living_index": 62.4, "rent_index": 36.2, "restaurant_price_index": 60.5, "lat": 41.3851, "lon": 2.1734, "safety_index": 74.0, "budget_tier": "mid-range"},
-    {"city_name": "Amsterdam", "country": "Netherlands", "region": "Europe", "cost_of_living_index": 80.6, "rent_index": 56.4, "restaurant_price_index": 78.0, "lat": 52.3676, "lon": 4.9041, "safety_index": 82.0, "budget_tier": "luxury"},
-    {"city_name": "Prague", "country": "Czech Republic", "region": "Europe", "cost_of_living_index": 51.3, "rent_index": 29.8, "restaurant_price_index": 48.2, "lat": 50.0755, "lon": 14.4378, "safety_index": 79.0, "budget_tier": "mid-range"},
-    {"city_name": "Vienna", "country": "Austria", "region": "Europe", "cost_of_living_index": 72.8, "rent_index": 41.0, "restaurant_price_index": 69.4, "lat": 48.2082, "lon": 16.3738, "safety_index": 84.0, "budget_tier": "luxury"},
-    {"city_name": "Lisbon", "country": "Portugal", "region": "Europe", "cost_of_living_index": 54.7, "rent_index": 34.0, "restaurant_price_index": 52.0, "lat": 38.7223, "lon": -9.1393, "safety_index": 80.0, "budget_tier": "mid-range"},
-    {"city_name": "Athens", "country": "Greece", "region": "Europe", "cost_of_living_index": 56.2, "rent_index": 22.4, "restaurant_price_index": 54.0, "lat": 37.9838, "lon": 23.7275, "safety_index": 67.0, "budget_tier": "budget"},
-    {"city_name": "Tokyo", "country": "Japan", "region": "Asia", "cost_of_living_index": 78.5, "rent_index": 42.6, "restaurant_price_index": 58.0, "lat": 35.6762, "lon": 139.6503, "safety_index": 91.0, "budget_tier": "mid-range"},
-    {"city_name": "Bangkok", "country": "Thailand", "region": "Asia", "cost_of_living_index": 42.3, "rent_index": 21.0, "restaurant_price_index": 32.5, "lat": 13.7563, "lon": 100.5018, "safety_index": 64.0, "budget_tier": "budget"},
-    {"city_name": "Bali", "country": "Indonesia", "region": "Asia", "cost_of_living_index": 38.0, "rent_index": 18.5, "restaurant_price_index": 28.0, "lat": -8.4095, "lon": 115.1889, "safety_index": 65.0, "budget_tier": "budget"},
-    {"city_name": "Singapore", "country": "Singapore", "region": "Asia", "cost_of_living_index": 89.2, "rent_index": 75.4, "restaurant_price_index": 72.0, "lat": 1.3521, "lon": 103.8198, "safety_index": 93.0, "budget_tier": "luxury"},
-    {"city_name": "Istanbul", "country": "Turkey", "region": "Asia", "cost_of_living_index": 44.5, "rent_index": 24.8, "restaurant_price_index": 41.0, "lat": 41.0082, "lon": 28.9784, "safety_index": 60.0, "budget_tier": "budget"},
-    {"city_name": "Dubai", "country": "United Arab Emirates", "region": "Asia", "cost_of_living_index": 76.8, "rent_index": 58.2, "restaurant_price_index": 70.0, "lat": 25.2048, "lon": 55.2708, "safety_index": 88.0, "budget_tier": "luxury"},
-    {"city_name": "Mumbai", "country": "India", "region": "Asia", "cost_of_living_index": 32.4, "rent_index": 22.0, "restaurant_price_index": 26.0, "lat": 19.0760, "lon": 72.8777, "safety_index": 62.0, "budget_tier": "budget"},
-    {"city_name": "New York", "country": "United States", "region": "Americas", "cost_of_living_index": 100.0, "rent_index": 100.0, "restaurant_price_index": 100.0, "lat": 40.7128, "lon": -74.0060, "safety_index": 66.0, "budget_tier": "luxury"},
-    {"city_name": "Mexico City", "country": "Mexico", "region": "Americas", "cost_of_living_index": 45.8, "rent_index": 25.4, "restaurant_price_index": 42.0, "lat": 19.4326, "lon": -99.1332, "safety_index": 55.0, "budget_tier": "budget"},
-    {"city_name": "Buenos Aires", "country": "Argentina", "region": "Americas", "cost_of_living_index": 48.0, "rent_index": 20.2, "restaurant_price_index": 44.5, "lat": -34.6037, "lon": -58.3816, "safety_index": 58.0, "budget_tier": "budget"},
-    {"city_name": "Cancun", "country": "Mexico", "region": "Americas", "cost_of_living_index": 58.4, "rent_index": 28.0, "restaurant_price_index": 52.0, "lat": 21.1619, "lon": -86.8515, "safety_index": 61.0, "budget_tier": "mid-range"},
-    {"city_name": "Toronto", "country": "Canada", "region": "Americas", "cost_of_living_index": 79.4, "rent_index": 54.0, "restaurant_price_index": 76.5, "lat": 43.6532, "lon": -79.3832, "safety_index": 78.0, "budget_tier": "luxury"},
+    # Top Indian Destinations
+    {"city_name": "Goa", "country": "India", "region": "West & Rajasthan", "cost_of_living_index": 45.0, "rent_index": 20.0, "restaurant_price_index": 35.0, "lat": 15.2993, "lon": 74.1240, "safety_index": 78.0, "budget_tier": "budget"},
+    {"city_name": "Udaipur", "country": "India", "region": "West & Rajasthan", "cost_of_living_index": 55.0, "rent_index": 22.0, "restaurant_price_index": 35.0, "lat": 24.5854, "lon": 73.7125, "safety_index": 88.0, "budget_tier": "mid-range"},
+    {"city_name": "Jaipur", "country": "India", "region": "West & Rajasthan", "cost_of_living_index": 40.0, "rent_index": 18.0, "restaurant_price_index": 30.0, "lat": 26.9124, "lon": 75.7873, "safety_index": 75.0, "budget_tier": "budget"},
+    {"city_name": "Manali", "country": "India", "region": "North India (Himalayas)", "cost_of_living_index": 50.0, "rent_index": 22.0, "restaurant_price_index": 32.0, "lat": 32.2396, "lon": 77.1887, "safety_index": 86.0, "budget_tier": "budget"},
+    {"city_name": "Leh Ladakh", "country": "India", "region": "North India (Himalayas)", "cost_of_living_index": 65.0, "rent_index": 25.0, "restaurant_price_index": 35.0, "lat": 34.1526, "lon": 77.5771, "safety_index": 92.0, "budget_tier": "mid-range"},
+    {"city_name": "Srinagar", "country": "India", "region": "North India (Himalayas)", "cost_of_living_index": 55.0, "rent_index": 20.0, "restaurant_price_index": 35.0, "lat": 34.0837, "lon": 74.7973, "safety_index": 78.0, "budget_tier": "mid-range"},
+    {"city_name": "Shimla", "country": "India", "region": "North India (Himalayas)", "cost_of_living_index": 48.0, "rent_index": 20.0, "restaurant_price_index": 30.0, "lat": 31.1048, "lon": 77.1734, "safety_index": 88.0, "budget_tier": "budget"},
+    {"city_name": "Rishikesh", "country": "India", "region": "North India (Himalayas)", "cost_of_living_index": 40.0, "rent_index": 16.0, "restaurant_price_index": 25.0, "lat": 30.0869, "lon": 78.2676, "safety_index": 88.0, "budget_tier": "budget"},
+    {"city_name": "Munnar", "country": "India", "region": "South India & Western Ghats", "cost_of_living_index": 45.0, "rent_index": 20.0, "restaurant_price_index": 28.0, "lat": 10.0889, "lon": 77.0595, "safety_index": 92.0, "budget_tier": "budget"},
+    {"city_name": "Alleppey", "country": "India", "region": "South India & Western Ghats", "cost_of_living_index": 55.0, "rent_index": 22.0, "restaurant_price_index": 30.0, "lat": 9.4981, "lon": 76.3388, "safety_index": 90.0, "budget_tier": "mid-range"},
+    {"city_name": "Hampi", "country": "India", "region": "South India & Western Ghats", "cost_of_living_index": 38.0, "rent_index": 14.0, "restaurant_price_index": 22.0, "lat": 15.3350, "lon": 76.4600, "safety_index": 86.0, "budget_tier": "budget"},
+    {"city_name": "Coorg", "country": "India", "region": "South India & Western Ghats", "cost_of_living_index": 52.0, "rent_index": 22.0, "restaurant_price_index": 32.0, "lat": 12.3375, "lon": 75.8069, "safety_index": 90.0, "budget_tier": "mid-range"},
+    {"city_name": "Pondicherry", "country": "India", "region": "South India & Western Ghats", "cost_of_living_index": 50.0, "rent_index": 22.0, "restaurant_price_index": 35.0, "lat": 11.9416, "lon": 79.8083, "safety_index": 88.0, "budget_tier": "mid-range"},
+    {"city_name": "Darjeeling", "country": "India", "region": "East & Northeast", "cost_of_living_index": 46.0, "rent_index": 18.0, "restaurant_price_index": 28.0, "lat": 27.0410, "lon": 88.2663, "safety_index": 90.0, "budget_tier": "budget"},
+    {"city_name": "Shillong", "country": "India", "region": "East & Northeast", "cost_of_living_index": 48.0, "rent_index": 18.0, "restaurant_price_index": 28.0, "lat": 25.5788, "lon": 91.8933, "safety_index": 92.0, "budget_tier": "budget"},
+    {"city_name": "Kolkata", "country": "India", "region": "East & Northeast", "cost_of_living_index": 45.0, "rent_index": 20.0, "restaurant_price_index": 26.0, "lat": 22.5726, "lon": 88.3639, "safety_index": 82.0, "budget_tier": "budget"},
+    {"city_name": "Varanasi", "country": "India", "region": "Central & Spiritual", "cost_of_living_index": 38.0, "rent_index": 16.0, "restaurant_price_index": 22.0, "lat": 25.3176, "lon": 82.9739, "safety_index": 80.0, "budget_tier": "budget"},
+    {"city_name": "Agra", "country": "India", "region": "Central & Spiritual", "cost_of_living_index": 45.0, "rent_index": 18.0, "restaurant_price_index": 30.0, "lat": 27.1767, "lon": 78.0081, "safety_index": 78.0, "budget_tier": "budget"},
+    {"city_name": "Amritsar", "country": "India", "region": "Central & Spiritual", "cost_of_living_index": 42.0, "rent_index": 18.0, "restaurant_price_index": 26.0, "lat": 31.6340, "lon": 74.8723, "safety_index": 90.0, "budget_tier": "budget"},
+    {"city_name": "Ayodhya", "country": "India", "region": "Central & Spiritual", "cost_of_living_index": 38.0, "rent_index": 16.0, "restaurant_price_index": 22.0, "lat": 26.7922, "lon": 82.1998, "safety_index": 88.0, "budget_tier": "budget"},
+    {"city_name": "Rann of Kutch", "country": "India", "region": "West & Rajasthan", "cost_of_living_index": 60.0, "rent_index": 20.0, "restaurant_price_index": 35.0, "lat": 23.8342, "lon": 69.8329, "safety_index": 92.0, "budget_tier": "mid-range"},
+    {"city_name": "Ahmedabad", "country": "India", "region": "West & Rajasthan", "cost_of_living_index": 45.0, "rent_index": 22.0, "restaurant_price_index": 30.0, "lat": 23.0225, "lon": 72.5714, "safety_index": 86.0, "budget_tier": "budget"},
+    {"city_name": "Mumbai", "country": "India", "region": "West & Rajasthan", "cost_of_living_index": 55.0, "rent_index": 35.0, "restaurant_price_index": 40.0, "lat": 19.0760, "lon": 72.8777, "safety_index": 76.0, "budget_tier": "mid-range"},
+    {"city_name": "Delhi", "country": "India", "region": "Central & Spiritual", "cost_of_living_index": 50.0, "rent_index": 28.0, "restaurant_price_index": 38.0, "lat": 28.6139, "lon": 77.2090, "safety_index": 68.0, "budget_tier": "mid-range"},
+    {"city_name": "Bengaluru", "country": "India", "region": "South India & Western Ghats", "cost_of_living_index": 55.0, "rent_index": 30.0, "restaurant_price_index": 42.0, "lat": 12.9716, "lon": 77.5946, "safety_index": 78.0, "budget_tier": "mid-range"},
 ]
 
 
@@ -135,46 +141,58 @@ def augment_and_build_dataset(cities_df: pd.DataFrame, target_rows: int = 2500) 
             travel_style = random.choice(styles)
             activity_density = random.choice(densities)
 
-            # Accommodation Cost
+            # Room allocation for group travelers
+            rooms_needed = math.ceil(num_travelers / 2.0)
+
+            # Accommodation Cost in INR
             rent_idx = float(city["rent_index"])
             if acc_tier == "budget":
-                acc_cost = rent_idx * 0.4 * duration_days
+                # Budget stay: ₹800 - ₹1,800/night/room
+                acc_cost = rent_idx * 45.0 * duration_days * rooms_needed
             elif acc_tier == "mid":
-                acc_cost = rent_idx * 0.8 * duration_days
+                # Mid-range: ₹2,500 - ₹5,500/night/room
+                acc_cost = rent_idx * 120.0 * duration_days * rooms_needed
             else:  # luxury
-                acc_cost = rent_idx * 2.0 * duration_days
+                # Luxury heritage: ₹8,000 - ₹25,000/night/room
+                acc_cost = rent_idx * 350.0 * duration_days * rooms_needed
 
-            # Meal Cost
+            # Meal Cost in INR
             rest_idx = float(city["restaurant_price_index"])
             if travel_style == "backpacker":
-                meal_cost = rest_idx * 0.5 * duration_days * num_travelers
+                # Local dhabas / street food: ₹300 - ₹500/day/person
+                meal_cost = rest_idx * 12.0 * duration_days * num_travelers
             elif travel_style == "explorer":
-                meal_cost = rest_idx * 1.0 * duration_days * num_travelers
+                # Regional restaurants / thalis: ₹600 - ₹1,000/day/person
+                meal_cost = rest_idx * 24.0 * duration_days * num_travelers
             else:  # luxury
-                meal_cost = rest_idx * 2.5 * duration_days * num_travelers
+                # Fine dining & royal feasts: ₹1,500 - ₹3,000/day/person
+                meal_cost = rest_idx * 55.0 * duration_days * num_travelers
 
-            # Activity Cost
+            # Activity Cost in INR
             if activity_density == "low":
-                act_cost = 15.0 * duration_days * num_travelers
+                act_cost = 250.0 * duration_days * num_travelers
             elif activity_density == "medium":
-                act_cost = 35.0 * duration_days * num_travelers
+                act_cost = 650.0 * duration_days * num_travelers
             else:  # high
-                act_cost = 70.0 * duration_days * num_travelers
+                act_cost = 1400.0 * duration_days * num_travelers
 
-            # Flight Cost via Haversine Distance
-            flight_dist = haversine_km(origin_lat, origin_lon, float(city["lat"]), float(city["lon"]))
-            if flight_dist < 1500:
-                flight_per_person = 80.0 + (flight_dist * 0.04)
-            elif flight_dist < 5000:
-                flight_per_person = 150.0 + (flight_dist * 0.06)
+            # Transit Cost (IRCTC Train / Volvo Bus / Domestic Flight) in INR
+            transit_dist = haversine_km(origin_lat, origin_lon, float(city["lat"]), float(city["lon"]))
+            if transit_dist < 400:
+                # Bus / Sleeper Train
+                transit_per_person = 450.0 + (transit_dist * 1.5)
+            elif transit_dist < 900:
+                # 3AC / 2AC Superfast Train
+                transit_per_person = 950.0 + (transit_dist * 1.8)
             else:
-                flight_per_person = 300.0 + (flight_dist * 0.09)
-            flight_cost = flight_per_person * num_travelers
+                # Domestic Flight / Vande Bharat / Rajdhani
+                transit_per_person = 2800.0 + (transit_dist * 2.8)
+            transit_cost = transit_per_person * num_travelers
 
             # Seasonality multiplier applies to stay and meal costs
-            base_subtotal = (acc_cost + meal_cost) * season_mult + act_cost + flight_cost
+            base_subtotal = (acc_cost + meal_cost) * season_mult + act_cost + transit_cost
             noise = random.gauss(0, base_subtotal * 0.05)
-            total_cost = round(max(150.0, base_subtotal + noise), 2)
+            total_cost = round(max(3000.0, base_subtotal + noise), 2)
 
             num_stops = 1 if duration_days <= 5 else (2 if duration_days <= 10 else 3)
 
@@ -195,7 +213,7 @@ def augment_and_build_dataset(cities_df: pd.DataFrame, target_rows: int = 2500) 
                 "accommodation_tier": acc_tier,
                 "travel_style": travel_style,
                 "activity_density": activity_density,
-                "flight_distance_km": round(flight_dist, 1),
+                "flight_distance_km": round(transit_dist, 1),
                 "num_stops": num_stops,
                 "seasonality_multiplier": season_mult,
                 "total_cost": total_cost,

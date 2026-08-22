@@ -27,6 +27,7 @@ async def update_trip_budget_settings(
     if payload.total_budget_limit is not None:
         trip.budget.total_budget_limit = payload.total_budget_limit
         trip.total_budget = payload.total_budget
+        trip.budget_target = payload.total_budget_limit # Save user intent to the new authoritative column
         db.add(trip)
 
     db.add(trip.budget)

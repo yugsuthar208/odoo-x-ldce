@@ -52,11 +52,29 @@ export function TripCard({ trip }) {
               <p style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {route}
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 6, color: "var(--ink-soft)", fontSize: "0.85rem" }}>
-                <Calendar size={14} />
-                <span style={{ whiteSpace: "nowrap" }}>{trip.start_date} &mdash; {trip.end_date}</span>
-                <span style={{ opacity: 0.5 }}>•</span>
-                <span style={{ fontWeight: 500 }}>{totalDays}d</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, color: "var(--ink-soft)", fontSize: "0.8125rem", flexWrap: "wrap" }}>
+                <Calendar size={12} />
+                <span>{trip.start_date} — {trip.end_date}</span>
+                <span style={{ opacity: 0.5 }}>·</span>
+                <span>{totalDays}d</span>
+                {trip.origin_city && (
+                  <>
+                    <span style={{ opacity: 0.5 }}>·</span>
+                    <span style={{ color: "var(--accent)", fontWeight: 500 }}>From: {trip.origin_city}</span>
+                  </>
+                )}
+                {trip.num_travelers && (
+                  <>
+                    <span style={{ opacity: 0.5 }}>·</span>
+                    <span>{trip.num_travelers} {trip.num_travelers === 1 ? "traveler" : "travelers"}</span>
+                  </>
+                )}
+                {trip.total_budget && (
+                  <>
+                    <span style={{ opacity: 0.5 }}>·</span>
+                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>₹{Number(trip.total_budget).toLocaleString('en-IN')}</span>
+                  </>
+                )}
               </div>
             </div>
             <span className={`pill ${statusPill(trip.status)}`} style={{ flexShrink: 0, marginTop: 2 }}>

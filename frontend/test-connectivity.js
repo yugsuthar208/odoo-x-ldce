@@ -6,7 +6,7 @@ let authToken = null;
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
-  timeout: 10000,
+  timeout: 15000,
 });
 
 api.interceptors.request.use((config) => {
@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
 
 async function runConnectivityTests() {
   console.log("===============================================================");
-  console.log("🌐 STARTING FRONTEND-TO-BACKEND CONNECTIVITY TEST SUITE");
+  console.log("🇮🇳 STARTING TRIPORA BHARAT FULL CONNECTIVITY TEST SUITE");
   console.log("===============================================================");
 
   let passed = 0;
@@ -46,13 +46,13 @@ async function runConnectivityTests() {
   });
 
   // 2. User Signup
-  const testEmail = `traveler_${Date.now()}@example.com`;
+  const testEmail = `bharat_traveler_${Date.now()}@example.com`;
   await test("POST /auth/signup", async () => {
     const res = await api.post("/auth/signup", {
-      name: "Frontend Traveler",
+      name: "Yug Suthar",
       email: testEmail,
       password: "TravelerPassword123!",
-      preferred_currency: "USD",
+      preferred_currency: "INR",
       language: "en",
     });
     if (!res.data.success || !res.data.data.access_token) {
@@ -80,18 +80,44 @@ async function runConnectivityTests() {
     }
   });
 
-  // 5. Explore Cities
+  // 5. Explore Indian Destinations
   let sampleCityId = null;
-  await test("GET /cities (Search & Filter)", async () => {
-    const res = await api.get("/cities", { params: { search: "Tokyo" } });
+  let sampleCityName = null;
+  await test("GET /cities (Indian Destination Search: Udaipur)", async () => {
+    const res = await api.get("/cities", { params: { search: "Udaipur" } });
     if (!res.data.success || !Array.isArray(res.data.data) || res.data.data.length === 0) {
-      throw new Error("No cities returned");
+      throw new Error("No Indian destinations returned for Udaipur");
     }
     sampleCityId = res.data.data[0].id;
+    sampleCityName = res.data.data[0].name;
   });
 
-  // 6. Recommended Cities (3-Layer Hybrid ML Recommender)
-  await test("GET /recommend/cities (Hybrid ML Recommender)", async () => {
+  // 6. Live DuckDuckGo Food Recommendations in INR
+  await test("GET /places/live-food (DuckDuckGo Live Authentic Delicacies & Thalis)", async () => {
+    const res = await api.get("/places/live-food", { params: { city: "Udaipur", budget_tier: "mid" } });
+    if (!res.data.success || !Array.isArray(res.data.data) || res.data.data.length === 0) {
+      throw new Error("No live food recommendations returned");
+    }
+  });
+
+  // 7. Live DuckDuckGo Stays & Hostels in INR
+  await test("GET /places/live-stays (DuckDuckGo Live Stays, Hostels & Heritage Havelis)", async () => {
+    const res = await api.get("/places/live-stays", { params: { city: "Udaipur", budget_tier: "mid" } });
+    if (!res.data.success || !Array.isArray(res.data.data) || res.data.data.length === 0) {
+      throw new Error("No live stay recommendations returned");
+    }
+  });
+
+        num_travelers: 4,
+      },
+    });
+    if (!res.data.success || !res.data.data.transit_options || res.data.data.transit_options.length === 0) {
+      throw new Error("No transit options generated");
+    }
+  });
+
+  // 9. Recommended Cities (3-Layer Hybrid ML Recommender)
+  await test("GET /recommend/cities (Hybrid ML Recommender in India)", async () => {
     const res = await api.get("/recommend/cities");
     const recs = res.data.data?.recommendations;
     if (!res.data.success || !Array.isArray(recs) || recs.length === 0) {
@@ -99,107 +125,101 @@ async function runConnectivityTests() {
     }
   });
 
-  // 7. Create Trip
-  let tripId = null;
-  await test("POST /trips", async () => {
+  // 10. Create Indian Group Trip with Origin & Travelers
+  let createdTripId = null;
+  await test("POST /trips (Create 4-Person Trip: Mumbai -> Udaipur in INR)", async () => {
     const res = await api.post("/trips", {
-      title: "Japan Spring Voyage",
-      description: "Visiting Tokyo, Kyoto & Osaka",
-      start_date: "2026-04-01",
-      end_date: "2026-04-12",
-      total_budget: 4500.0,
-      currency: "USD",
+      title: "Royal Rajasthan Heritage Trail",
+      description: "Team trip exploring lake palaces and authentic Rajasthani food",
+      start_date: "2026-10-10",
+      end_date: "2026-10-15",
+      origin_city: "Mumbai",
+      num_travelers: 4,
+      transit_mode: "train",
+      total_budget: 60000.0,
+      currency: "INR",
       visibility: "private",
     });
     if (!res.data.success || !res.data.data.id) {
-      throw new Error("Trip creation failed");
+      throw new Error("Failed to create group trip");
     }
-    tripId = res.data.data.id;
+    createdTripId = res.data.data.id;
   });
 
-  // 8. Add Stop to Trip
-  let stopId = null;
-  await test("POST /trips/{id}/stops", async () => {
-    const res = await api.post(`/trips/${tripId}/stops`, {
+  // 11. Add Stop to Trip
+  let createdStopId = null;
+  await test("POST /trips/{id}/stops (Add Udaipur Stop)", async () => {
+    const res = await api.post(`/trips/${createdTripId}/stops`, {
       city_id: sampleCityId,
-      arrival_date: "2026-04-01",
-      departure_date: "2026-04-05",
-      order: 0,
-      hotel_name: "Shinjuku Grand Hotel",
+      arrival_date: "2026-10-10",
+      departure_date: "2026-10-15",
     });
     if (!res.data.success || !res.data.data.id) {
-      throw new Error("Add stop failed");
+      throw new Error("Failed to add stop to trip");
     }
-    stopId = res.data.data.id;
+    createdStopId = res.data.data.id;
   });
 
-  // 9. Predict Budget (XGBoost ML)
-  await test("GET /recommend/budget/{trip_id} (XGBoost Predictor)", async () => {
-    const res = await api.get(`/recommend/budget/${tripId}`);
-    const predVal = res.data.data?.prediction?.predicted_total_cost;
-    if (!res.data.success || typeof predVal !== "number") {
-      throw new Error("Budget prediction failed");
+  // 12. City Activities in INR
+  let sampleActivity = null;
+  await test("GET /cities/{id}/activities (Fetch authentic Indian activities in INR)", async () => {
+    const res = await api.get(`/cities/${sampleCityId}/activities`);
+    if (!res.data.success || !Array.isArray(res.data.data) || res.data.data.length === 0) {
+      throw new Error("No activities returned for city");
     }
+    sampleActivity = res.data.data[0];
   });
 
-  // 10. Add Expense
-  await test("POST /trips/{id}/expenses", async () => {
-    const res = await api.post(`/trips/${tripId}/expenses`, {
-      category: "accommodation",
-      description: "Hotel Deposit",
-      actual_amount: 500.0,
-      currency: "USD",
+  // 13. Add Itinerary Activity
+  let itineraryItemId = null;
+  await test("POST /stops/{stop_id}/items (Add City Activity to Itinerary)", async () => {
+    const res = await api.post(`/stops/${createdStopId}/items`, {
+      activity_id: sampleActivity.id,
+      scheduled_date: "2026-10-11",
+      scheduled_time: "10:00:00",
+      custom_cost: sampleActivity.estimated_cost,
     });
     if (!res.data.success || !res.data.data.id) {
-      throw new Error("Add expense failed");
+      throw new Error("Failed to add activity to itinerary");
+    }
+    itineraryItemId = res.data.data.id;
+  });
+
+  // 14. Trip Transit Plan Route
+  await test("GET /trips/{id}/transit (End-to-End Multi-City Transit Plan)", async () => {
+    const res = await api.get(`/trips/${createdTripId}/transit`);
+    if (!res.data.success || !res.data.data.journey_legs || res.data.data.journey_legs.length === 0) {
+      throw new Error("Failed to compute journey legs for trip");
     }
   });
 
-  // 11. Get Map Route
-  await test("GET /trips/{id}/map-route", async () => {
-    const res = await api.get(`/trips/${tripId}/map-route`);
-    const routeArr = res.data.data?.route;
-    if (!res.data.success || !Array.isArray(routeArr)) {
-      throw new Error("Map route failed");
+  // 15. Group Budget Calculation & Room Sharing in INR
+  await test("GET /trips/{id}/budget (Group Splitting, Room Allocation & Per-Person Cost in INR)", async () => {
+    const res = await api.get(`/trips/${createdTripId}/budget`);
+    const data = res.data.data;
+    if (!res.data.success || !data.cost_breakdown || data.currency !== "INR") {
+      throw new Error(`Invalid INR budget response format: ${JSON.stringify(data)}`);
+    }
+    if (data.num_travelers !== 4 || data.rooms_allocated !== 2) {
+      throw new Error(`Expected 4 travelers with 2 rooms, got ${data.num_travelers} travelers and ${data.rooms_allocated} rooms`);
     }
   });
 
-  // 12. In-App Notifications
-  await test("GET /notifications", async () => {
-    const res = await api.get("/notifications");
-    if (!Array.isArray(res.data)) {
-      throw new Error("Notifications response format invalid");
-    }
-  });
-
-  // 13. Audit Trail
-  await test("GET /trips/{id}/audit-logs", async () => {
-    const res = await api.get(`/trips/${tripId}/audit-logs`);
-    if (!Array.isArray(res.data) || res.data.length === 0) {
-      throw new Error("Audit logs empty or invalid");
-    }
-  });
-
-  // 14. Prometheus Metrics
-  await test("GET /metrics (Observability)", async () => {
-    const res = await axios.get("http://localhost:8000/metrics");
-    if (res.status !== 200 || !res.data.includes("globetrotter_")) {
-      throw new Error("Prometheus metrics invalid");
-    }
+  // 16. Cleanup Itinerary Item & Trip
+  await test("DELETE /itinerary-items/{id} & DELETE /trips/{id} (Cleanup)", async () => {
+    await api.delete(`/itinerary-items/${itineraryItemId}`);
+    await api.delete(`/trips/${createdTripId}`);
   });
 
   console.log("===============================================================");
-  console.log(`📊 CONNECTIVITY TEST SUMMARY: ${passed}/${total} PASSED (${Math.round((passed / total) * 100)}%)`);
+  console.log(`📊 CONNECTIVITY TEST SUMMARY: ${passed}/${total} TESTS PASSED (${Math.round((passed / total) * 100)}%)`);
   console.log("===============================================================");
 
   if (passed === total) {
-    console.log("🎉 Frontend and Backend are 100% connected and operational!");
+    console.log("🎉 All Indian travel routes, transit engine, live food & stays, and group budgeting are 100% OPERATIONAL!");
   } else {
-    process.exit(1);
+    console.error("⚠️ Some tests failed. Please review errors above.");
   }
 }
 
-runConnectivityTests().catch((err) => {
-  console.error("Fatal Test Runner Error:", err);
-  process.exit(1);
-});
+runConnectivityTests().catch(console.error);

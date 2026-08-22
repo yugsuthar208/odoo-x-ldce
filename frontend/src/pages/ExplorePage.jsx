@@ -4,12 +4,19 @@ import { cityService } from "../services/cityService";
 import CityCard from "../components/cities/CityCard";
 import { motion } from "framer-motion";
 
-const REGIONS = ["All", "Europe", "Asia", "North America", "South America", "Africa", "Oceania", "Middle East"];
+const REGIONS = [
+  "All India",
+  "North India (Himalayas)",
+  "West & Rajasthan",
+  "South India & Western Ghats",
+  "East & Northeast",
+  "Central & Spiritual"
+];
 
 export default function ExplorePage() {
   const [cities, setCities] = useState([]);
   const [search, setSearch] = useState("");
-  const [region, setRegion] = useState("All");
+  const [region, setRegion] = useState("All India");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +26,8 @@ export default function ExplorePage() {
   const loadCities = async () => {
     setLoading(true);
     try {
-      const res = await cityService.getCities(search, region);
+      const regionParam = (region === "All India" || region === "All") ? undefined : region;
+      const res = await cityService.getCities(search, regionParam);
       const list = res?.data || (Array.isArray(res) ? res : []);
       setCities(Array.isArray(list) ? list : []);
     } catch (err) {

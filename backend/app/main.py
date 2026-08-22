@@ -27,6 +27,8 @@ from app.routes import (
     metrics_router,
     audit_router,
     oauth_router,
+    places_router,
+    transit_router,
 )
 
 logger = logging.getLogger("GlobeTrotterAPI")
@@ -174,6 +176,8 @@ app.include_router(recommend_router, prefix=api_v1_prefix)
 app.include_router(notifications_router, prefix=api_v1_prefix)
 app.include_router(websockets_router, prefix=api_v1_prefix)
 app.include_router(audit_router, prefix=api_v1_prefix)
+app.include_router(places_router, prefix=api_v1_prefix)
+app.include_router(transit_router, prefix=api_v1_prefix)
 
 
 if __name__ == "__main__":

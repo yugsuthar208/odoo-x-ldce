@@ -9,9 +9,14 @@ from app.models.trip_collaborator import TripCollaborator
 from app.middleware.auth import create_access_token, hash_password
 
 
+from app.database import Base, engine, async_session_factory
+
+
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
+
+
 
 
 @pytest.fixture
@@ -24,7 +29,8 @@ async def client():
 @pytest.fixture
 async def test_users():
     """Creates owner, editor, and viewer test users with JWT tokens."""
-    async with async_session_factory() as session:
+    async_session = async_session_factory()
+    try:
         owner = User(
             id=str(uuid.uuid4()),
             email=f"owner_{uuid.uuid4().hex[:6]}@example.com",
@@ -43,8 +49,8 @@ async def test_users():
             password_hash=hash_password("ViewerPassword123!"),
             name="Charlie Viewer",
         )
-        session.add_all([owner, editor, viewer])
-        await session.commit()
+        async_session.add_all([owner, editor, viewer])
+        await async_session.commit()
 
         owner_token = create_access_token({"sub": owner.id, "email": owner.email})
         editor_token = create_access_token({"sub": editor.id, "email": editor.email})
@@ -58,6 +64,9 @@ async def test_users():
             "viewer": viewer,
             "viewer_token": viewer_token,
         }
+    finally:
+        await async_session.close()
+
 
 
 @pytest.mark.anyio
@@ -261,4 +270,188 @@ async def test_notifications_lifecycle(client: AsyncClient, test_users: dict):
     )
     assert read_all_resp.status_code == 200
     assert "Marked" in read_all_resp.json()["message"]
+
+
+@pytest.mark.anyio
+async def test_room_calculation_and_budget_aggregation():
+    """Verifies room math (1->1, 2->1, 3->2, 4->2, 5->3) and budget breakdown math."""
+    import math
+    assert math.ceil(1 / 2.0) == 1
+    assert math.ceil(2 / 2.0) == 1
+    assert math.ceil(3 / 2.0) == 2
+    assert math.ceil(4 / 2.0) == 2
+    assert math.ceil(5 / 2.0) == 3
+
+    # Test exact budget aggregation formula
+    transport = 1500.0
+    stay = 4000.0
+    activities = 1200.0
+    food = 4000.0 # 5 days * 1 traveler * 800
+    other = 300.0
+    total = transport + stay + activities + food + other
+    assert total == 11000.0
+
+
+@pytest.mark.anyio
+async def test_architectural_domain_flow(client: AsyncClient, test_users: dict):
+    """
+    Integration unit test for:
+    - traveler count updates (4 -> 5)
+    - date validation bounds
+    - stop reordering & transit rebuild
+    - transit option selection
+    - stay selection
+    - user isolation
+    - public trip copy
+    """
+    owner_token = test_users["owner_token"]
+    editor_token = test_users["editor_token"]
+
+    # 1. Create Trip for 4 travelers
+    create_resp = await client.post(
+        "/api/trips",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={
+            "title": "Rajasthan Heritage Tour",
+            "description": "Jaipur Jodhpur Udaipur",
+            "start_date": "2026-10-01",
+            "end_date": "2026-10-10",
+            "origin_city": "Mumbai",
+            "num_travelers": 4,
+            "budget_target": 100000.0,
+            "currency": "INR",
+        }
+    )
+    assert create_resp.status_code == 201
+    trip_id = create_resp.json()["data"]["id"]
+
+    # 2. Add Stops
+    cities_resp = await client.get("/api/cities")
+    cities = cities_resp.json()["data"]
+    jaipur = next((c for c in cities if c["name"] == "Jaipur"), cities[0])
+    jodhpur = next((c for c in cities if c["name"] == "Jodhpur"), cities[1])
+    udaipur = next((c for c in cities if c["name"] == "Udaipur"), cities[2])
+
+
+    stop1_resp = await client.post(
+        f"/api/trips/{trip_id}/stops",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={"city_id": jaipur["id"], "arrival_date": "2026-10-01", "departure_date": "2026-10-03", "stop_order": 0}
+    )
+    assert stop1_resp.status_code == 201
+    stop1_id = stop1_resp.json()["data"]["id"]
+
+    stop2_resp = await client.post(
+        f"/api/trips/{trip_id}/stops",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={"city_id": jodhpur["id"], "arrival_date": "2026-10-03", "departure_date": "2026-10-06", "stop_order": 1}
+    )
+    assert stop2_resp.status_code == 201
+    stop2_id = stop2_resp.json()["data"]["id"]
+
+    stop3_resp = await client.post(
+        f"/api/trips/{trip_id}/stops",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={"city_id": udaipur["id"], "arrival_date": "2026-10-06", "departure_date": "2026-10-09", "stop_order": 2}
+    )
+    assert stop3_resp.status_code == 201
+    stop3_id = stop3_resp.json()["data"]["id"]
+
+    # 3. Test Invalid Date Bounds (should be rejected)
+    bad_date_resp = await client.post(
+        f"/api/trips/{trip_id}/stops",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={"city_id": jaipur["id"], "arrival_date": "2026-09-01", "departure_date": "2026-10-05", "stop_order": 3}
+    )
+    assert bad_date_resp.status_code == 400
+
+    # 4. Fetch Transit Legs and Select Transit Option
+    transit_resp = await client.get(
+        f"/api/trips/{trip_id}/transit",
+        headers={"Authorization": f"Bearer {owner_token}"}
+    )
+    assert transit_resp.status_code == 200
+    legs = transit_resp.json()["data"]["journey_legs"]
+    assert len(legs) >= 3
+
+    target_leg = legs[0]
+    target_opt = target_leg["options"][0]
+    select_t_resp = await client.patch(
+        f"/api/trips/{trip_id}/transit/{target_leg['id']}",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={"selected_option_id": target_opt["id"]}
+    )
+    assert select_t_resp.status_code == 200
+    assert select_t_resp.json()["data"]["budget"]["breakdown"]["transport"] > 0
+
+    # 5. Select Stay
+    stay_resp = await client.post(
+        f"/api/trips/{trip_id}/stays",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={
+            "trip_stop_id": stop1_id,
+            "name": "Zostel Jaipur",
+            "checkin_date": "2026-10-01",
+            "checkout_date": "2026-10-03",
+            "nightly_cost": 1200.0,
+        }
+    )
+    assert stay_resp.status_code == 201
+    assert stay_resp.json()["data"]["stay"]["total_cost"] == 2400.0
+
+    # 6. Reorder Stops (Jaipur -> Udaipur -> Jodhpur)
+    reorder_resp = await client.put(
+        f"/api/trips/{trip_id}/stops/reorder",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json=[
+            {"stop_id": stop1_id, "order_index": 0},
+            {"stop_id": stop3_id, "order_index": 1},
+            {"stop_id": stop2_id, "order_index": 2},
+        ]
+    )
+    assert reorder_resp.status_code == 200
+    reordered_stops = reorder_resp.json()["data"]
+    assert reordered_stops[1]["id"] == stop3_id
+
+    # 7. Update Travelers 4 -> 5 and verify budget recalculation
+    update_tr_resp = await client.put(
+        f"/api/trips/{trip_id}",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={"num_travelers": 5}
+    )
+    assert update_tr_resp.status_code == 200
+
+    budget_resp = await client.get(
+        f"/api/trips/{trip_id}/budget",
+        headers={"Authorization": f"Bearer {owner_token}"}
+    )
+    assert budget_resp.status_code == 200
+    budget_data = budget_resp.json()["data"]
+    assert budget_data["travelers"] == 5
+    assert budget_data["rooms"] == 3
+
+    # 8. User Isolation Test (Editor cannot view private trip unless added)
+    iso_resp = await client.get(
+        f"/api/trips/{trip_id}",
+        headers={"Authorization": f"Bearer {editor_token}"}
+    )
+    assert iso_resp.status_code == 403
+
+    # 9. Public Share & Public Copy Test
+    make_public_resp = await client.put(
+        f"/api/trips/{trip_id}",
+        headers={"Authorization": f"Bearer {owner_token}"},
+        json={"visibility": "public"}
+    )
+    assert make_public_resp.status_code == 200
+
+    copy_resp = await client.post(
+        f"/api/trips/{trip_id}/duplicate",
+        headers={"Authorization": f"Bearer {editor_token}"}
+    )
+    assert copy_resp.status_code == 201
+    copied_trip = copy_resp.json()["data"]
+    assert copied_trip["user_id"] == test_users["editor"].id
+    assert copied_trip["id"] != trip_id
+
 

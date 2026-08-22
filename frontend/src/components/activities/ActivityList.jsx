@@ -26,7 +26,7 @@ export function ActivityList({ items = [], onRemove }) {
               </div>
               <div style={{ display: "flex", gap: 12, color: "var(--ink-soft)", fontSize: "0.75rem" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Clock size={12} /> {act?.duration_hours}h</span>
-                <span style={{ display: "flex", alignItems: "center", gap: 3 }}><DollarSign size={12} /> {item.custom_cost ?? act?.estimated_cost}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 3, fontWeight: 600, color: "var(--accent)" }}>₹{Number(item.custom_cost ?? act?.estimated_cost ?? 0).toLocaleString('en-IN')}</span>
               </div>
             </div>
 
