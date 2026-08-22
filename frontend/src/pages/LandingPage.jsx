@@ -214,7 +214,7 @@ export default function LandingPage() {
         id="destinations"
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
+        viewport={{ once: false, margin: "-100px" }}
         variants={fadeUp}
       >
         <div className="lp-section-header">
@@ -268,7 +268,7 @@ export default function LandingPage() {
           style={{ textAlign: "center", marginBottom: "100px" }}
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: false, margin: "-100px" }}
           transition={{ duration: 0.6 }}
         >
           <h2 style={{ fontSize: "4.5rem", letterSpacing: "-2px", marginBottom: "24px", lineHeight: 1.1 }}>
@@ -314,7 +314,7 @@ export default function LandingPage() {
                   style={{ height: "550px", borderRadius: "32px", overflow: "hidden", boxShadow: "0 30px 60px rgba(0,0,0,0.12)" }}
                   initial={{ opacity: 0, x: isEven ? -80 : 80, scale: 0.95 }}
                   whileInView={{ opacity: 1, x: 0, scale: 1 }}
-                  viewport={{ once: true, margin: "-100px" }}
+                  viewport={{ once: false, margin: "-100px" }}
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <img src={style.img} alt={style.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} className="scale-on-hover" />
@@ -324,7 +324,7 @@ export default function LandingPage() {
                   className="vibe-row-content"
                   initial={{ opacity: 0, x: isEven ? 80 : -80 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
+                  viewport={{ once: false, margin: "-100px" }}
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                 >
                   <div style={{ display: "inline-block", padding: "8px 16px", background: "var(--surface)", borderRadius: "99px", color: "var(--ink-soft)", fontWeight: 600, fontSize: "0.85rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "24px", border: "1px solid rgba(0,0,0,0.05)" }}>
@@ -357,7 +357,7 @@ export default function LandingPage() {
         id="ai-magic"
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
+        viewport={{ once: false, margin: "-100px" }}
         variants={fadeUp}
       >
         <div className="lp-ai-container glass-panel-dark">
