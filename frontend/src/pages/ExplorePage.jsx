@@ -5,7 +5,8 @@ import CityCard from "../components/cities/CityCard";
 import { motion } from "framer-motion";
 
 const REGIONS = [
-  "All India",
+  "All Destinations",
+  "International",
   "North India (Himalayas)",
   "West & Rajasthan",
   "South India & Western Ghats",
@@ -13,10 +14,42 @@ const REGIONS = [
   "Central & Spiritual"
 ];
 
+const CityGrid = ({ cities, title }) => {
+  if (!cities || cities.length === 0) return null;
+  return (
+    <div style={{ marginBottom: "56px" }}>
+      {title && (
+        <h2 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "24px", letterSpacing: "-0.5px" }}>
+          {title}
+        </h2>
+      )}
+      <motion.div 
+        style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: "-40px" }}
+        variants={{
+          hidden: { opacity: 0 },
+          show: { opacity: 1, transition: { staggerChildren: 0.05 } }
+        }}
+      >
+        {cities.map((city) => (
+          <motion.div key={city.id} variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+          }}>
+            <CityCard city={city} />
+          </motion.div>
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
 export default function ExplorePage() {
   const [cities, setCities] = useState([]);
   const [search, setSearch] = useState("");
-  const [region, setRegion] = useState("All India");
+  const [region, setRegion] = useState("All Destinations");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,9 +59,17 @@ export default function ExplorePage() {
   const loadCities = async () => {
     setLoading(true);
     try {
-      const regionParam = (region === "All India" || region === "All") ? undefined : region;
+      // If "All Destinations" or "International", we fetch all and filter locally
+      const isAllOrIntl = region === "All Destinations" || region === "International";
+      const regionParam = isAllOrIntl ? undefined : region;
+      
       const res = await cityService.getCities(search, regionParam);
-      const list = res?.data || (Array.isArray(res) ? res : []);
+      let list = res?.data || (Array.isArray(res) ? res : []);
+      
+      if (region === "International") {
+        list = list.filter(c => c.country !== "India");
+      }
+      
       setCities(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error("Failed to load cities", err);
@@ -42,6 +83,19 @@ export default function ExplorePage() {
     e.preventDefault();
     loadCities();
   };
+
+  // Groupings for "All Destinations" view
+  const intlCities = cities.filter(c => c.country !== "India");
+  const northIndia = cities.filter(c => c.region === "North India (Himalayas)");
+  const westIndia = cities.filter(c => c.region === "West & Rajasthan");
+  const southIndia = cities.filter(c => c.region === "South India & Western Ghats");
+  const eastIndia = cities.filter(c => c.region === "East & Northeast");
+  const centralIndia = cities.filter(c => c.region === "Central & Spiritual");
+  
+  // Any Indian cities that don't match the specific regions above
+  const otherIndia = cities.filter(c => c.country === "India" && 
+    !["North India (Himalayas)", "West & Rajasthan", "South India & Western Ghats", "East & Northeast", "Central & Spiritual"].includes(c.region)
+  );
 
   return (
     <motion.div 
@@ -121,25 +175,18 @@ export default function ExplorePage() {
           <h2 style={{ marginBottom: 8 }}>No destinations found</h2>
           <p style={{ color: "var(--ink-soft)" }}>Try adjusting your search or region filter.</p>
         </div>
+      ) : region === "All Destinations" && !search ? (
+        <div>
+          <CityGrid title="International Destinations" cities={intlCities} />
+          <CityGrid title="North India (Himalayas)" cities={northIndia} />
+          <CityGrid title="West & Rajasthan" cities={westIndia} />
+          <CityGrid title="South India & Western Ghats" cities={southIndia} />
+          <CityGrid title="East & Northeast" cities={eastIndia} />
+          <CityGrid title="Central & Spiritual" cities={centralIndia} />
+          <CityGrid title="Other Regions in India" cities={otherIndia} />
+        </div>
       ) : (
-        <motion.div 
-          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}
-          initial="hidden"
-          animate="show"
-          variants={{
-            hidden: { opacity: 0 },
-            show: { opacity: 1, transition: { staggerChildren: 0.05 } }
-          }}
-        >
-          {cities.map((city) => (
-            <motion.div key={city.id} variants={{
-              hidden: { opacity: 0, scale: 0.9 },
-              show: { opacity: 1, scale: 1, transition: { duration: 0.4 } }
-            }}>
-              <CityCard city={city} />
-            </motion.div>
-          ))}
-        </motion.div>
+        <CityGrid cities={cities} />
       )}
     </motion.div>
   );
