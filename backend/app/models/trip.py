@@ -83,6 +83,19 @@ class Trip(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    transit_legs = relationship(
+        "TransitLeg",
+        back_populates="trip",
+        cascade="all, delete-orphan",
+        order_by="TransitLeg.sequence",
+        lazy="selectin",
+    )
+    stays = relationship(
+        "TripStay",
+        back_populates="trip",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     @property
     def is_public(self) -> bool:

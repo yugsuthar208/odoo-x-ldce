@@ -22,6 +22,7 @@ from app.controllers.trip_controller import (
     get_trip_detail,
     list_user_trips,
     update_trip,
+    get_trip_and_check_access,
 )
 from app.database import get_db
 from app.middleware.auth import get_current_user, get_optional_current_user
@@ -128,9 +129,6 @@ async def get_trip(
     from app.services.budget_service import BudgetService
     budget = await BudgetService.calculate_authoritative_budget(db, id)
     
-    # Refresh trip to get relationships if needed
-    await db.refresh(trip, ["stops", "transit_legs"])
-    
     return APIResponse(
         success=True,
         data={
@@ -146,7 +144,52 @@ async def get_trip(
                 "status": trip.dynamic_status(),
                 "budget_target": trip.budget_target,
             },
-            "stops": [{"id": s.id, "city_id": s.city_id, "city_name": s.city.name if s.city else None, "arrival_date": s.arrival_date, "departure_date": s.departure_date, "stop_order": s.stop_order} for s in sorted(trip.stops, key=lambda x: x.stop_order)],
+            "stops": [
+                {
+                    "id": s.id,
+                    "trip_id": s.trip_id,
+                    "city_id": s.city_id,
+                    "city_name": s.city.name if s.city else None,
+                    "city": {
+                        "id": s.city.id,
+                        "name": s.city.name,
+                        "country": s.city.country,
+                        "region": s.city.region,
+                        "image_url": s.city.image_url,
+                        "latitude": s.city.latitude,
+                        "longitude": s.city.longitude,
+                    } if s.city else None,
+                    "arrival_date": s.arrival_date,
+                    "departure_date": s.departure_date,
+                    "stop_order": s.stop_order,
+                    "notes": s.notes,
+                    "itinerary_items": [
+                        {
+                            "id": item.id,
+                            "trip_stop_id": item.trip_stop_id,
+                            "activity_id": item.activity_id,
+                            "scheduled_date": item.scheduled_date,
+                            "start_time": item.start_time,
+                            "end_time": item.end_time,
+                            "custom_cost": item.custom_cost,
+                            "notes": item.notes,
+                            "status": item.status,
+                            "activity": {
+                                "id": item.activity.id,
+                                "name": item.activity.name,
+                                "category": item.activity.category,
+                                "description": item.activity.description,
+                                "estimated_cost": item.activity.estimated_cost,
+                                "duration_hours": item.activity.duration_hours,
+                                "image_url": item.activity.image_url,
+                                "tags": item.activity.tags,
+                            } if item.activity else None,
+                        }
+                        for item in (s.itinerary_items or [])
+                    ],
+                }
+                for s in sorted(trip.stops, key=lambda x: x.stop_order)
+            ],
             "transit_legs": [{
                 "id": leg.id,
                 "sequence": leg.sequence,
@@ -391,7 +434,7 @@ async def generate_itinerary_with_ai(
 
 @router.get(
     "/{id}/budget",
-    response_model=APIResponse[BudgetCalculationOut],
+    response_model=APIResponse[dict],
     status_code=status.HTTP_200_OK,
     summary="Full cost breakdown for trip",
 )
@@ -411,7 +454,7 @@ async def get_trip_budget_breakdown(
 
 @router.put(
     "/{id}/budget",
-    response_model=APIResponse[BudgetCalculationOut],
+    response_model=APIResponse[dict],
     status_code=status.HTTP_200_OK,
     summary="Update manual budget fields",
 )
@@ -579,4 +622,114 @@ async def get_map_route(
         success=True,
         data=route_data,
         message="Map route calculated successfully",
+    )
+
+
+# ============================================================================
+# STAYS SUB-ROUTES
+# ============================================================================
+
+from datetime import date
+from pydantic import BaseModel, Field
+
+class TripStaySelectRequest(BaseModel):
+    trip_stop_id: str
+    name: str
+    checkin_date: date
+    checkout_date: date
+    nightly_cost: float = Field(ge=0.0)
+    stay_id: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@router.post(
+    "/{id}/stays",
+    response_model=APIResponse[dict],
+    status_code=status.HTTP_201_CREATED,
+    summary="Select stay for a trip stop",
+)
+async def select_stay(
+    id: str,
+    payload: TripStaySelectRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Selects or updates accommodation for a trip stop and recalculates budget."""
+    await get_trip_and_check_access(db=db, trip_id=id, user_id=current_user.id, required_role="editor")
+    
+    from app.services.stay_service import StayService
+    from app.services.budget_service import BudgetService
+    
+    stay = await StayService.select_trip_stay(
+        db=db,
+        trip_stop_id=payload.trip_stop_id,
+        name=payload.name,
+        checkin_date=payload.checkin_date,
+        checkout_date=payload.checkout_date,
+        nightly_cost=payload.nightly_cost,
+        stay_id=payload.stay_id,
+        notes=payload.notes,
+    )
+    
+    budget = await BudgetService.calculate_authoritative_budget(db, id)
+    
+    return APIResponse(
+        success=True,
+        data={
+            "stay": {
+                "id": stay.id,
+                "trip_id": stay.trip_id,
+                "trip_stop_id": stay.trip_stop_id,
+                "stay_id": stay.stay_id,
+                "name": stay.name,
+                "checkin_date": stay.checkin_date,
+                "checkout_date": stay.checkout_date,
+                "nightly_cost": stay.nightly_cost,
+                "cost": stay.cost,
+                "total_cost": stay.cost,
+                "notes": stay.notes,
+            },
+            "budget": budget,
+        },
+        message="Stay selected and budget updated successfully",
+    )
+
+
+@router.get(
+    "/{id}/stays",
+    response_model=APIResponse[List[dict]],
+    status_code=status.HTTP_200_OK,
+    summary="Get all selected stays for trip",
+)
+async def get_trip_stays(
+    id: str,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieves all selected stays for a trip."""
+    await get_trip_and_check_access(db=db, trip_id=id, user_id=current_user.id if current_user else None, required_role="viewer")
+    
+    from app.models.stay import TripStay
+    res = await db.execute(select(TripStay).where(TripStay.trip_id == id))
+    stays = list(res.scalars().all())
+    
+    return APIResponse(
+        success=True,
+        data=[
+            {
+                "id": s.id,
+                "trip_id": s.trip_id,
+                "trip_stop_id": s.trip_stop_id,
+                "stay_id": s.stay_id,
+                "name": s.name,
+                "checkin_date": s.checkin_date,
+                "checkout_date": s.checkout_date,
+                "nightly_cost": s.nightly_cost,
+                "cost": s.cost,
+                "total_cost": s.cost,
+                "notes": s.notes,
+            }
+            for s in stays
+        ],
+        message="Trip stays retrieved successfully",
     )

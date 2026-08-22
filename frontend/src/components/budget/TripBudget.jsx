@@ -21,11 +21,19 @@ const ICONS = {
 };
 
 export default function TripBudget({ tripId, budget, onRefresh }) {
-  const [budgetLimit, setBudgetLimit] = useState(budget?.budget_target?.toString() || "");
+  const currentLimit = budget?.budget_status?.total_budget_limit ?? budget?.budget_target ?? "";
+  const [budgetLimit, setBudgetLimit] = useState(currentLimit ? currentLimit.toString() : "");
+
+  useEffect(() => {
+    const limit = budget?.budget_status?.total_budget_limit ?? budget?.budget_target ?? "";
+    if (limit !== undefined && limit !== null) {
+      setBudgetLimit(limit.toString());
+    }
+  }, [budget]);
 
   const handleUpdateLimit = async () => {
     try {
-      await tripService.updateTripBudget(tripId, { total_budget_limit: parseFloat(budgetLimit) });
+      await tripService.updateTripBudget(tripId, { total_budget_limit: parseFloat(budgetLimit) || 0 });
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error(err);
@@ -40,14 +48,31 @@ export default function TripBudget({ tripId, budget, onRefresh }) {
     );
   }
 
-  const totalCost = budget.cost_breakdown.total_cost || 0;
-  
+  const costBreakdown = budget.cost_breakdown || {};
+  const totalCost = costBreakdown.total_cost || budget.total_cost || 0;
+  const stayCost = costBreakdown.stay_cost || budget.breakdown?.stay || 0;
+  const mealsCost = costBreakdown.meals_cost || budget.breakdown?.food || 0;
+  const transportCost = costBreakdown.transport_cost || budget.breakdown?.transport || 0;
+  const activitiesCost = costBreakdown.activities_cost || budget.breakdown?.activities || 0;
+  const miscCost = costBreakdown.misc_cost || budget.breakdown?.other || 0;
+
+  const budgetLimitNum = budget.budget_status?.total_budget_limit ?? budget.budget_target ?? null;
+  const isOverBudget = budget.budget_status?.is_over_budget ?? (budgetLimitNum ? totalCost > budgetLimitNum : false);
+  const overage = budget.budget_status?.budget_overage ?? Math.max(0, totalCost - (budgetLimitNum || 0));
+  const remaining = budget.budget_status?.budget_remaining ?? Math.max(0, (budgetLimitNum || 0) - totalCost);
+
+  const numTravelers = budget.num_travelers || budget.travelers || 1;
+  const roomsAllocated = budget.rooms_allocated || budget.rooms || 1;
+  const costPerPerson = budget.per_person?.total_cost_per_person || budget.cost_per_person || (totalCost / (numTravelers || 1));
+
+  const percent = (val) => (totalCost > 0 ? ((val || 0) / totalCost) * 100 : 0);
+
   const chartData = [
-    { name: "Accommodation", value: budget.cost_breakdown?.stay_cost || 0, color: COLORS.stay },
-    { name: "Food & Dining", value: budget.cost_breakdown?.meals_cost || 0, color: COLORS.food },
-    { name: "Transportation", value: budget.cost_breakdown?.transport_cost || 0, color: COLORS.transport },
-    { name: "Activities", value: budget.cost_breakdown?.activities_cost || 0, color: COLORS.activities },
-    { name: "Miscellaneous", value: budget.cost_breakdown?.misc_cost || 0, color: COLORS.misc }
+    { name: "Accommodation", value: stayCost, color: COLORS.stay },
+    { name: "Food & Dining", value: mealsCost, color: COLORS.food },
+    { name: "Transportation", value: transportCost, color: COLORS.transport },
+    { name: "Activities", value: activitiesCost, color: COLORS.activities },
+    { name: "Miscellaneous", value: miscCost, color: COLORS.misc }
   ].filter(item => item.value > 0);
 
   // EMPTY STATE
@@ -88,40 +113,40 @@ export default function TripBudget({ tripId, budget, onRefresh }) {
         {/* Left Column: Summary & Chart */}
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           {/* Top Metric */}
-          <div className="card" style={{ padding: 24, textAlign: "center", background: budget.is_over_budget ? "var(--error-surface)" : "var(--primary-surface)" }}>
+          <div className="card" style={{ padding: 24, textAlign: "center", background: isOverBudget ? "var(--error-surface)" : "var(--primary-surface)" }}>
             <h3 style={{ color: "var(--ink-soft)", fontSize: "0.875rem", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
               Estimated Group Trip Cost
             </h3>
             <div style={{ fontSize: "2.5rem", fontWeight: "800", color: "var(--ink-dark)" }}>
-              ₹{totalCost.toLocaleString('en-IN')}
+              ₹{Math.round(totalCost).toLocaleString('en-IN')}
             </div>
 
             {/* Per-Person Split Banner */}
-            {budget.travelers && (
+            {numTravelers > 0 && (
               <div style={{ marginTop: 12, padding: "10px 14px", background: "var(--surface-alt)", borderRadius: "var(--radius-input)", display: "flex", alignItems: "center", justifyContent: "space-around", fontSize: "0.8125rem" }}>
                 <div>
                   <span style={{ color: "var(--ink-soft)", display: "block", fontSize: "0.75rem" }}>Per Person</span>
                   <span style={{ fontWeight: 700, color: "var(--accent)", fontSize: "1rem" }}>
-                    ₹{(budget.cost_per_person || 0).toLocaleString('en-IN')}
+                    ₹{Math.round(costPerPerson).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div style={{ borderLeft: "1px solid var(--border)", paddingLeft: 12 }}>
                   <span style={{ color: "var(--ink-soft)", display: "block", fontSize: "0.75rem" }}>Group Size</span>
-                  <span style={{ fontWeight: 600 }}>{budget.travelers} Travelers</span>
+                  <span style={{ fontWeight: 600 }}>{numTravelers} Travelers</span>
                 </div>
                 <div style={{ borderLeft: "1px solid var(--border)", paddingLeft: 12 }}>
                   <span style={{ color: "var(--ink-soft)", display: "block", fontSize: "0.75rem" }}>Rooms</span>
-                  <span style={{ fontWeight: 600 }}>{budget.rooms} Rooms</span>
+                  <span style={{ fontWeight: 600 }}>{roomsAllocated} Rooms</span>
                 </div>
               </div>
             )}
             
-            {budget.budget_target && (
-              <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontWeight: "500", color: budget.is_over_budget ? "var(--error-main)" : "var(--primary-main)" }}>
-                {budget.is_over_budget ? (
-                  <><AlertCircle size={16} /> Over limit by ₹{overage.toLocaleString('en-IN')}</>
+            {budgetLimitNum !== null && budgetLimitNum > 0 && (
+              <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontWeight: "500", color: isOverBudget ? "var(--error-main)" : "var(--primary-main)" }}>
+                {isOverBudget ? (
+                  <><AlertCircle size={16} /> Over limit by ₹{Math.round(overage).toLocaleString('en-IN')}</>
                 ) : (
-                  <><TrendingDown size={16} /> ₹{remaining.toLocaleString('en-IN')} under budget</>
+                  <><TrendingDown size={16} /> ₹{Math.round(remaining).toLocaleString('en-IN')} under budget</>
                 )}
               </div>
             )}
@@ -190,11 +215,11 @@ export default function TripBudget({ tripId, budget, onRefresh }) {
           <div className="card" style={{ padding: 24, flex: 1 }}>
             <h3 style={{ marginBottom: 20 }}>Detailed Breakdown</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <BreakdownRow icon={ICONS.stay} label="Accommodation" amount={budget.breakdown?.stay} color={COLORS.stay} percent={percent(budget.breakdown?.stay)} />
-              <BreakdownRow icon={ICONS.food} label="Food & Dining" amount={budget.breakdown?.food} color={COLORS.food} percent={percent(budget.breakdown?.food)} />
-              <BreakdownRow icon={ICONS.transport} label="Transportation" amount={budget.breakdown?.transport} color={COLORS.transport} percent={percent(budget.breakdown?.transport)} />
-              <BreakdownRow icon={ICONS.activities} label="Activities" amount={budget.breakdown?.activities} color={COLORS.activities} percent={percent(budget.breakdown?.activities)} />
-              <BreakdownRow icon={ICONS.misc} label="Miscellaneous" amount={budget.breakdown?.other} color={COLORS.misc} percent={percent(budget.breakdown?.other)} />
+              <BreakdownRow icon={ICONS.stay} label="Accommodation" amount={stayCost} color={COLORS.stay} percent={percent(stayCost)} />
+              <BreakdownRow icon={ICONS.food} label="Food & Dining" amount={mealsCost} color={COLORS.food} percent={percent(mealsCost)} />
+              <BreakdownRow icon={ICONS.transport} label="Transportation" amount={transportCost} color={COLORS.transport} percent={percent(transportCost)} />
+              <BreakdownRow icon={ICONS.activities} label="Activities" amount={activitiesCost} color={COLORS.activities} percent={percent(activitiesCost)} />
+              <BreakdownRow icon={ICONS.misc} label="Miscellaneous" amount={miscCost} color={COLORS.misc} percent={percent(miscCost)} />
             </div>
           </div>
 

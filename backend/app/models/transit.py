@@ -27,7 +27,7 @@ class TransitLeg(Base):
         CheckConstraint("from_stop_id IS NULL OR from_stop_id != to_stop_id", name="ck_transit_leg_different_stops"),
     )
 
-    trip = relationship("Trip", backref="transit_legs")
+    trip = relationship("Trip", back_populates="transit_legs")
     options = relationship(
         "TransitOption", 
         back_populates="leg", 

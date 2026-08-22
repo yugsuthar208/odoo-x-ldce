@@ -49,7 +49,7 @@ function CityCard({ city }) {
         </p>
         <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.9rem" }}>
-            ${city.cost_index}/day
+            ₹{Math.round((city.cost_index || 50) * 40).toLocaleString('en-IN')}/night
           </span>
           <ArrowRight size={16} color="var(--ink-soft)" />
         </div>
@@ -68,7 +68,7 @@ export default function DashboardPage() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const firstName = user?.full_name?.split(" ")[0] || "Traveler";
+  const firstName = user?.full_name?.split(" ")[0] || user?.name?.split(" ")[0] || "Traveler";
 
   useEffect(() => {
     tripService.getTrips()
@@ -77,7 +77,10 @@ export default function DashboardPage() {
       .finally(() => setTripsLoading(false));
 
     recommendService.getRecommendedCities()
-      .then((r) => setCities(r.data || []))
+      .then((r) => {
+        const list = r.data?.recommendations || (Array.isArray(r.data) ? r.data : []);
+        setCities(list);
+      })
       .catch(() => {})
       .finally(() => setCitiesLoading(false));
   }, []);

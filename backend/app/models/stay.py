@@ -55,6 +55,7 @@ class TripStay(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     trip_stop = relationship("TripStop", backref="stay_info")
+    trip = relationship("Trip", back_populates="stays")
     stay = relationship("Stay")
 
     @property

@@ -125,8 +125,7 @@ export default function TripDetailPage() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn--ghost btn--sm"><Share2 size={14} /> Share</button>
-          <button className="btn btn--icon btn--ghost"><Settings size={18} /></button>
+          <button className="btn btn--ghost btn--sm" onClick={() => setActiveTab("collab")}><Share2 size={14} /> Share</button>
         </div>
       </header>
 
@@ -187,7 +186,7 @@ export default function TripDetailPage() {
                 {selectedStop && (
                   <>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                      <h3 style={{ fontSize: "1rem" }}>{selectedStop.city?.name} Activities</h3>
+                      <h3 style={{ fontSize: "1rem" }}>{selectedStop.city?.name || selectedStop.city_name || "City"} Activities</h3>
                       <button className="btn btn--icon btn--ghost btn--sm" onClick={() => setPickerStop(selectedStop)}><Plus size={16} /></button>
                     </div>
                     <ActivityList items={selectedStopActivities} onRemove={handleRemoveActivity} />
@@ -205,7 +204,7 @@ export default function TripDetailPage() {
 
             {activeTab === "discover" && (
               <LiveFoodStayFinder 
-                cityName={selectedStop?.city?.name || stops[0]?.city?.name || "Goa"} 
+                cityName={selectedStop?.city?.name || selectedStop?.city_name || stops[0]?.city?.name || stops[0]?.city_name || "Goa"} 
               />
             )}
 
@@ -230,7 +229,7 @@ export default function TripDetailPage() {
 
       {/* Modals */}
       {showAddStop && <AddStopModal onClose={() => setShowAddStop(false)} onAdd={handleAddStop} />}
-      {pickerStop && <ActivityPickerModal tripId={trip.id} stopId={pickerStop.id} cityId={pickerStop.city.id} onClose={() => setPickerStop(null)} onAdded={handleAddActivity} />}
+      {pickerStop && <ActivityPickerModal tripId={trip.id} stopId={pickerStop.id} cityId={pickerStop.city?.id || pickerStop.city_id} onClose={() => setPickerStop(null)} onAdded={handleAddActivity} />}
       
       <style>{`@media (max-width: 768px) { .hide-mobile { display: none !important; } }`}</style>
     </div>

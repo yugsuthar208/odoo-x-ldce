@@ -106,11 +106,29 @@ class TransitService:
         """
         num_travelers = max(1, int(getattr(trip, "num_travelers", 1) or 1))
         
-        # Determine the sequence of stops
-        ordered_stops = sorted(trip.stops, key=lambda s: s.stop_order)
+        # Query fresh stops directly from DB to avoid session relationship caching issues
+        from app.models.stop import TripStop
+        from sqlalchemy.orm import selectinload
+        
+        stops_res = await db.execute(
+            select(TripStop)
+            .options(selectinload(TripStop.city))
+            .where(TripStop.trip_id == trip.id)
+            .order_by(TripStop.stop_order.asc())
+        )
+        ordered_stops = list(stops_res.scalars().all())
+        
+        # Query existing legs directly
+        legs_res = await db.execute(
+            select(TransitLeg)
+            .options(selectinload(TransitLeg.options))
+            .where(TransitLeg.trip_id == trip.id)
+        )
+        existing_legs_list = list(legs_res.scalars().all())
+        
         if not ordered_stops:
             # If no stops, delete all legs
-            for leg in trip.transit_legs:
+            for leg in existing_legs_list:
                 await db.delete(leg)
             await db.flush()
             return
@@ -124,18 +142,27 @@ class TransitService:
             intended_pairs.append((ordered_stops[i].id, ordered_stops[i+1].id))
             
         # 2. Compare with existing legs
-        existing_legs = { (leg.from_stop_id, leg.to_stop_id): leg for leg in trip.transit_legs }
+        existing_legs = { (leg.from_stop_id, leg.to_stop_id): leg for leg in existing_legs_list }
         
         # Remove stale legs
-        for pair, leg in existing_legs.items():
+        for pair, leg in list(existing_legs.items()):
             if pair not in intended_pairs:
                 await db.delete(leg)
+                del existing_legs[pair]
+        await db.flush()
                 
+        # Temporarily offset sequences of remaining existing legs to avoid unique constraint collisions
+        for temp_idx, leg in enumerate(existing_legs.values()):
+            leg.sequence = -1000 - temp_idx
+            db.add(leg)
+        await db.flush()
+
         # Generate missing legs and update sequence
         for seq, (from_id, to_id) in enumerate(intended_pairs):
             if (from_id, to_id) in existing_legs:
                 leg = existing_legs[(from_id, to_id)]
                 leg.sequence = seq
+                db.add(leg)
             else:
                 # Need to calculate distance
                 orig_lat, orig_lon = 0.0, 0.0
