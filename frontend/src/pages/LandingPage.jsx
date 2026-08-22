@@ -1,32 +1,39 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Search, MapPin, Calendar, Mountain, ChevronDown, ArrowRight, ArrowLeft, Menu } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, MapPin, Globe, ChevronDown, ArrowRight, ArrowLeft, Menu, Star, Route, Calculator, Compass } from 'lucide-react';
 import './LandingPage.css';
 
 export default function LandingPage() {
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    navigate('/explore');
+  };
+
   return (
     <div className="lp-wrapper">
-      {/* Navbar */}
+      {/* Navbar - Uses existing links */}
       <nav className="lp-navbar">
         <div className="lp-nav-left">
+          <a href="#how-it-works">Features</a>
           <a href="#destinations">Destinations</a>
-          <a href="#package">Package</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#about">About Us</a>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
         </div>
         <div className="lp-nav-center">
           <span className="lp-logo-text">GlobeTrotter</span>
         </div>
         <div className="lp-nav-right">
-          <button className="lp-lang-btn">EN</button>
-          <Link to="/login" className="lp-btn-talk">Let's Talk</Link>
+          <Link to="/login" className="lp-lang-btn" style={{ textDecoration: 'none' }}>Log In</Link>
+          <Link to="/signup" className="lp-btn-talk">Start Planning</Link>
           <button className="lp-menu-btn">
             <Menu size={20} />
           </button>
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section - Uses existing messaging */}
       <section className="lp-hero-section">
         <div className="lp-hero-container">
           <img 
@@ -34,21 +41,21 @@ export default function LandingPage() {
             alt="Cinematic landscape" 
             className="lp-hero-bg" 
           />
-          
           <div className="lp-hero-overlay"></div>
 
-          <h1 className="lp-hero-title">GLOBETROTTER</h1>
+          <h1 className="lp-hero-title" style={{ fontSize: '13vw' }}>GLOBETROTTER</h1>
           
           <div className="lp-hero-content">
             <div className="lp-hero-left">
-              <p className="lp-hero-subtitle">
-                EXPLORE THE<br/>
-                BEAUTY OF NATURE<br/>
-                LIKE NEVER BEFORE
+              <p className="lp-hero-subtitle" style={{ textTransform: 'uppercase' }}>
+                Plan trips that<br/>
+                plan themselves<br/>
+                <span style={{ fontSize: '14px', opacity: 0.8, textTransform: 'none', display: 'block', marginTop: '8px' }}>Say goodbye to chaotic spreadsheets.</span>
               </p>
+              {/* Existing function: Start planning free -> /signup */}
               <Link to="/signup" className="lp-btn-start">
                 <div className="lp-btn-icon"><ArrowRight size={14} color="#000" /></div>
-                <span>START YOUR JOURNEY</span>
+                <span>START PLANNING FREE</span>
               </Link>
             </div>
             
@@ -57,7 +64,7 @@ export default function LandingPage() {
                 <div className="lp-mouse">
                   <div className="lp-wheel"></div>
                 </div>
-                <span>Scroll Now</span>
+                <span>See how it works</span>
               </div>
             </div>
             
@@ -70,53 +77,36 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          
-          <div className="lp-hero-carousel-controls">
-            <button className="lp-carousel-btn"><ArrowLeft size={16}/></button>
-            <div className="lp-carousel-dots">
-              <span className="lp-dot active"></span>
-              <span className="lp-dot"></span>
-              <span className="lp-dot"></span>
-            </div>
-            <button className="lp-carousel-btn"><ArrowRight size={16}/></button>
-          </div>
         </div>
       </section>
 
-      {/* Floating Search Bar */}
+      {/* Floating Search Bar - Mapped to ExplorePage functionality */}
       <div className="lp-search-wrapper">
-        <div className="lp-search-bar">
+        <form onSubmit={handleSearchSubmit} className="lp-search-bar">
           <div className="lp-search-field">
             <MapPin size={20} className="lp-field-icon" />
             <div className="lp-field-text">
-              <label>City or address</label>
+              <label>Search cities...</label>
             </div>
           </div>
           <div className="lp-search-divider"></div>
           <div className="lp-search-field">
-            <Calendar size={20} className="lp-field-icon" />
+            <Globe size={20} className="lp-field-icon" />
             <div className="lp-field-text">
-              <label>Add Dates</label>
-            </div>
-          </div>
-          <div className="lp-search-divider"></div>
-          <div className="lp-search-field">
-            <Mountain size={20} className="lp-field-icon" />
-            <div className="lp-field-text">
-              <label>Landscape Type</label>
+              <label>Region (All)</label>
             </div>
             <ChevronDown size={16} className="lp-chevron" />
           </div>
-          <button className="lp-search-submit">
+          <button type="submit" className="lp-search-submit">
             <Search size={20} color="#fff" />
           </button>
-        </div>
+        </form>
       </div>
 
-      {/* Recommended Destinations */}
+      {/* Recommended Destinations - Uses actual seed data from project */}
       <section className="lp-destinations" id="destinations">
         <div className="lp-section-header">
-          <h2>Recommended Destination</h2>
+          <h2>Curated Destinations</h2>
           <div className="lp-slider-controls">
             <button className="lp-slider-btn"><ArrowLeft size={18}/></button>
             <button className="lp-slider-btn"><ArrowRight size={18}/></button>
@@ -124,109 +114,109 @@ export default function LandingPage() {
         </div>
         
         <div className="lp-cards-grid">
-          {/* Card 1 */}
+          {/* Card 1: Paris */}
           <div className="lp-card">
             <div className="lp-card-image-wrap">
-              <img src="https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=600" alt="Australia" />
+              <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800" alt="Paris" />
               <div className="lp-badge lp-badge-top-right">
-                <span className="lp-flag">🇦🇺</span> Australia
+                <span className="lp-flag">🇫🇷</span> France
               </div>
               <div className="lp-badge lp-badge-bottom-left">
-                <span className="lp-star">★</span> 4.9
+                <span className="lp-star">★</span> 9.8
               </div>
             </div>
             <div className="lp-card-body">
-              <h3>Sunset Cruise in Whitehaven Beach</h3>
-              <p>Sail through the stunning Whitsunday Islands with incredible ocean views...</p>
+              <h3>Paris</h3>
+              <p>The City of Light is renowned for its world-class art, fashion, gastronomy, and culture...</p>
               <Link to="/explore" className="lp-card-cta">
-                Booking Now <ArrowRight size={14} className="lp-cta-arrow"/>
+                View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
               </Link>
             </div>
           </div>
 
-          {/* Card 2 */}
+          {/* Card 2: Rome */}
           <div className="lp-card">
             <div className="lp-card-image-wrap">
-              <img src="https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?q=80&w=600" alt="Switzerland" />
+              <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800" alt="Rome" />
               <div className="lp-badge lp-badge-top-right">
-                <span className="lp-flag">🇨🇭</span> Switzerland
+                <span className="lp-flag">🇮🇹</span> Italy
               </div>
               <div className="lp-badge lp-badge-bottom-left">
-                <span className="lp-star">★</span> 4.8
+                <span className="lp-star">★</span> 9.6
               </div>
             </div>
             <div className="lp-card-body">
-              <h3>Mount Titlis and Lucerne Day Tour</h3>
-              <p>Experience the snowy peaks of Mount Titlis and the beautiful city of Lucerne...</p>
+              <h3>Rome</h3>
+              <p>A living open-air museum boasting nearly 3,000 years of globally influential art and architecture...</p>
               <Link to="/explore" className="lp-card-cta">
-                Booking Now <ArrowRight size={14} className="lp-cta-arrow"/>
+                View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
               </Link>
             </div>
           </div>
 
-          {/* Card 3 */}
+          {/* Card 3: Tokyo */}
           <div className="lp-card">
             <div className="lp-card-image-wrap">
-              <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=600" alt="Greece" />
-              <div className="lp-badge lp-badge-top-right">
-                <span className="lp-flag">🇬🇷</span> Greece
-              </div>
-              <div className="lp-badge lp-badge-bottom-left">
-                <span className="lp-star">★</span> 4.9
-              </div>
-            </div>
-            <div className="lp-card-body">
-              <h3>Santorini Volcano and Hot Springs</h3>
-              <p>Explore the volcanic islands and swim in the therapeutic hot springs...</p>
-              <Link to="/explore" className="lp-card-cta">
-                Booking Now <ArrowRight size={14} className="lp-cta-arrow"/>
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 4 */}
-          <div className="lp-card">
-            <div className="lp-card-image-wrap">
-              <img src="https://images.unsplash.com/photo-1527004013197-933c4bcc61f4?q=80&w=600" alt="Japan" />
+              <img src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800" alt="Tokyo" />
               <div className="lp-badge lp-badge-top-right">
                 <span className="lp-flag">🇯🇵</span> Japan
               </div>
               <div className="lp-badge lp-badge-bottom-left">
-                <span className="lp-star">★</span> 4.7
+                <span className="lp-star">★</span> 9.9
               </div>
             </div>
             <div className="lp-card-body">
-              <h3>Mount Fuji and Hakone Day Trip</h3>
-              <p>See the iconic Mount Fuji and take a relaxing cruise on Lake Ashi...</p>
+              <h3>Tokyo</h3>
+              <p>Mixes ultra-modern skyscrapers and neon signs with historic temples. A culinary capital...</p>
               <Link to="/explore" className="lp-card-cta">
-                Booking Now <ArrowRight size={14} className="lp-cta-arrow"/>
+                View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 4: Bali */}
+          <div className="lp-card">
+            <div className="lp-card-image-wrap">
+              <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800" alt="Bali" />
+              <div className="lp-badge lp-badge-top-right">
+                <span className="lp-flag">🇮🇩</span> Indonesia
+              </div>
+              <div className="lp-badge lp-badge-bottom-left">
+                <span className="lp-star">★</span> 9.5
+              </div>
+            </div>
+            <div className="lp-card-body">
+              <h3>Bali</h3>
+              <p>An island paradise known for its forested volcanic mountains, iconic rice paddies, and coral reefs...</p>
+              <Link to="/explore" className="lp-card-cta">
+                View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Elevate Your Adventures */}
-      <section className="lp-elevate" id="about">
+      {/* Features Section - Uses existing "How it works" content */}
+      <section className="lp-elevate" id="how-it-works">
         <div className="lp-elevate-left">
-          <h2>Elevate Your Adventures</h2>
+          <h2>The perfect route, mapped out</h2>
           <p className="lp-elevate-desc">
-            Discover a world of new possibilities with GlobeTrotter. Your journey begins here, where every detail is crafted for your perfect experience. Let us guide you to the most breathtaking destinations on Earth.
+            Visualize your entire journey on an interactive map. Adjust stops, reorganize days, and let our AI optimize the travel time between your destinations.
           </p>
           
           <div className="lp-features-grid">
             <div className="lp-feature">
-              <div className="lp-feature-icon-wrapper">✦</div>
+              <div className="lp-feature-icon-wrapper"><Calculator size={20}/></div>
               <div>
-                <h4>Diving and Snorkeling</h4>
-                <p>Explore the breathtaking underwater world with expert guides.</p>
+                <h4>AI-Powered Budget Predictor</h4>
+                <p>Stop guessing how much you'll spend. Our trained ML model predicts your exact costs.</p>
               </div>
             </div>
             <div className="lp-feature">
-              <div className="lp-feature-icon-wrapper">✧</div>
+              <div className="lp-feature-icon-wrapper"><Compass size={20}/></div>
               <div>
-                <h4>Professional Tour Guide</h4>
-                <p>Connect with local experts who know the land perfectly.</p>
+                <h4>Discover your next obsession</h4>
+                <p>Browse highly-curated destinations based on your travel style and region.</p>
               </div>
             </div>
           </div>
@@ -234,28 +224,82 @@ export default function LandingPage() {
         <div className="lp-elevate-right">
           <div className="lp-elevate-image-wrap">
             <img 
-              src="https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=800&auto=format&fit=crop" 
-              alt="Norway Fjords" 
+              src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop" 
+              alt="Interactive Map Visualization" 
             />
             <div className="lp-elevate-badge lp-badge-tl">
-              <span className="lp-flag">🇳🇴</span> Norway
+              <Route size={14} style={{ marginRight: '6px' }} /> 15+ Map Styles
             </div>
             <div className="lp-elevate-badge lp-badge-tr">
-              Recommended
+              94% Accuracy
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Kept Functionality: Stats Strip & Testimonials (Restyled to match reference aesthetic) */}
+      <section className="lp-stats-section">
+        <div className="lp-stats-grid">
+          <div className="lp-stat">
+            <h3>20+</h3>
+            <p>Destinations</p>
+          </div>
+          <div className="lp-stat">
+            <h3>100+</h3>
+            <p>Activities</p>
+          </div>
+          <div className="lp-stat">
+            <h3>50k</h3>
+            <p>Trips Planned</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-testimonials">
+        <h2 style={{ textAlign: 'center', marginBottom: '40px', fontSize: '32px' }}>Don't just take our word for it</h2>
+        <div className="lp-testimonials-grid">
+          <div className="lp-testimonial-card">
+            <p className="lp-testimonial-quote">"TRIPORA completely changed how I plan my solo trips. The budget predictor was spot on for my week in Tokyo."</p>
+            <div className="lp-testimonial-author">
+              <div className="lp-avatar">A</div>
+              <div>
+                <div className="lp-author-name">Aisha</div>
+                <div className="lp-author-title">Solo Traveler</div>
+              </div>
+            </div>
+          </div>
+          <div className="lp-testimonial-card">
+            <p className="lp-testimonial-quote">"Finally, a tool that lets our whole friend group collaborate in real-time without using a messy spreadsheet."</p>
+            <div className="lp-testimonial-author">
+              <div className="lp-avatar">M</div>
+              <div>
+                <div className="lp-author-name">Marcus</div>
+                <div className="lp-author-title">Group Trip Organizer</div>
+              </div>
+            </div>
+          </div>
+          <div className="lp-testimonial-card">
+            <p className="lp-testimonial-quote">"The interactive map view is a lifesaver. Being able to see how far apart activities are saved us so much transit time."</p>
+            <div className="lp-testimonial-author">
+              <div className="lp-avatar">S</div>
+              <div>
+                <div className="lp-author-name">Sarah</div>
+                <div className="lp-author-title">Digital Nomad</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer - Uses existing links */}
       <footer className="lp-footer">
         <div className="lp-footer-content">
           <div className="lp-footer-logo">GlobeTrotter</div>
           <div className="lp-footer-links">
-            <a href="#destinations">Destinations</a>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Contact Us</a>
+            <a href="#how-it-works">Features</a>
+            <a href="#destinations">About</a>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
           </div>
         </div>
       </footer>

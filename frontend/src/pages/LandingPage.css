@@ -621,6 +621,95 @@ button {
   right: 16px;
 }
 
+/* ---- Kept Functionality (Stats & Testimonials) ---- */
+.lp-stats-section {
+  padding: 60px 48px;
+  background-color: #f9f9f9;
+  border-top: 1px solid #eaeaea;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.lp-stats-grid {
+  display: flex;
+  justify-content: space-around;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.lp-stat h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.lp-stat p {
+  font-size: 14px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.lp-testimonials {
+  padding: 100px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.lp-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.lp-testimonial-card {
+  background: #fff;
+  border: 1px solid #eaeaea;
+  padding: 32px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.lp-testimonial-quote {
+  font-size: 15px;
+  color: #333;
+  line-height: 1.6;
+  font-style: italic;
+  margin-bottom: 24px;
+}
+
+.lp-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lp-avatar {
+  width: 48px;
+  height: 48px;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.lp-author-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.lp-author-title {
+  font-size: 13px;
+  color: #666;
+}
+
 /* ---- Footer ---- */
 .lp-footer {
   border-top: 1px solid #eaeaea;
@@ -713,6 +802,13 @@ button {
     height: 1px;
   }
   .lp-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .lp-stats-grid {
+    flex-direction: column;
+    gap: 40px;
+  }
+  .lp-testimonials-grid {
     grid-template-columns: 1fr;
   }
   .lp-footer-content {
