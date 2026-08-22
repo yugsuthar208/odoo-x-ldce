@@ -1,203 +1,312 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, MapPin, Globe, ChevronDown, ArrowRight, ArrowLeft, Menu, Star, Route, Calculator, Compass } from 'lucide-react';
+import { Search, MapPin, Globe, ChevronDown, ArrowRight, ArrowLeft, Menu, Star, Route, Calculator, Compass, Sparkles, Map, CalendarClock } from 'lucide-react';
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import './LandingPage.css';
 
+// --- 3D Tilt Card Component ---
+function TiltCard({ children }) {
+  const ref = useRef(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  
+  const springConfig = { damping: 20, stiffness: 300, mass: 0.5 };
+  const mouseXSpring = useSpring(x, springConfig);
+  const mouseYSpring = useSpring(y, springConfig);
+  
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
+
+  const handleMouseMove = (e) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const xPct = mouseX / width - 0.5;
+    const yPct = mouseY / height - 0.5;
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d",
+      }}
+      whileHover={{ scale: 1.05, zIndex: 10 }}
+      className="lp-card-tilt-wrapper"
+    >
+      <div style={{ transform: "translateZ(30px)", height: "100%" }}>
+        {children}
+      </div>
+    </motion.div>
+  );
+}
+
+// --- Main Page Component ---
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { scrollY } = useScroll();
+  
+  const heroY = useTransform(scrollY, [0, 1000], [0, 400]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     navigate('/explore');
   };
 
+  const fadeUp = {
+    hidden: { opacity: 0, y: 40 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+  };
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 }
+    }
+  };
+
   return (
     <div className="lp-wrapper">
-      {/* Navbar - Uses existing links */}
-      <nav className="lp-navbar">
+      {/* Navbar */}
+      <motion.nav 
+        className="lp-navbar glass-nav"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      >
         <div className="lp-nav-left">
-          <a href="#how-it-works">Features</a>
-          <a href="#destinations">Destinations</a>
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
+          <a href="#how-it-works" className="hover-link">Features</a>
+          <a href="#destinations" className="hover-link">Destinations</a>
+          <a href="#ai-magic" className="hover-link">AI Magic</a>
+          <a href="#" className="hover-link">Privacy</a>
         </div>
         <div className="lp-nav-center">
-          <span className="lp-logo-text">TRIPORA</span>
+          <span className="lp-logo-text magnetic-text">TRIPORA</span>
         </div>
         <div className="lp-nav-right">
-          <Link to="/login" className="lp-lang-btn" style={{ textDecoration: 'none' }}>Log In</Link>
-          <Link to="/signup" className="lp-btn-talk">Start Planning</Link>
+          <Link to="/login" className="lp-lang-btn hover-link" style={{ textDecoration: 'none' }}>Log In</Link>
+          <Link to="/signup" className="lp-btn-talk glow-on-hover">Start Planning</Link>
           <button className="lp-menu-btn">
             <Menu size={20} />
           </button>
         </div>
-      </nav>
+      </motion.nav>
 
-      {/* Hero Section - Uses existing messaging */}
-      <section className="lp-hero-section">
+      {/* Hero Section */}
+      <section className="lp-hero-section overflow-hidden">
         <div className="lp-hero-container">
-          <img 
+          <motion.img 
+            style={{ y: heroY }}
             src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2940&auto=format&fit=crop" 
             alt="Cinematic landscape" 
-            className="lp-hero-bg" 
+            className="lp-hero-bg parallax-img" 
           />
           <div className="lp-hero-overlay"></div>
 
-          <h1 className="lp-hero-title" style={{ fontSize: '13vw' }}>TRIPORA</h1>
+          <motion.h1 
+            className="lp-hero-title" 
+            style={{ fontSize: '13vw' }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
+          >
+            TRIPORA
+          </motion.h1>
           
           <div className="lp-hero-content">
-            <div className="lp-hero-left">
+            <motion.div 
+              className="lp-hero-left"
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 1, delay: 0.5 }}
+            >
               <p className="lp-hero-subtitle" style={{ textTransform: 'uppercase' }}>
                 Plan trips that<br/>
                 plan themselves<br/>
-                <span style={{ fontSize: '14px', opacity: 0.8, textTransform: 'none', display: 'block', marginTop: '8px' }}>Say goodbye to chaotic spreadsheets.</span>
+                <span className="subtitle-sm" style={{ fontSize: '14px', opacity: 0.8, textTransform: 'none', display: 'block', marginTop: '8px' }}>Say goodbye to chaotic spreadsheets.</span>
               </p>
-              {/* Existing function: Start planning free -> /signup */}
-              <Link to="/signup" className="lp-btn-start">
+              <Link to="/signup" className="lp-btn-start btn-magnetic">
                 <div className="lp-btn-icon"><ArrowRight size={14} color="#000" /></div>
                 <span>START PLANNING FREE</span>
               </Link>
-            </div>
+            </motion.div>
             
-            <div className="lp-hero-center">
+            <motion.div 
+              className="lp-hero-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5, duration: 1 }}
+            >
               <div className="lp-scroll-indicator">
                 <div className="lp-mouse">
-                  <div className="lp-wheel"></div>
+                  <motion.div 
+                    className="lp-wheel"
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                  />
                 </div>
                 <span>See how it works</span>
               </div>
-            </div>
+            </motion.div>
             
-            <div className="lp-hero-right">
-              <div className="lp-hero-thumbnail">
+            <motion.div 
+              className="lp-hero-right"
+              initial={{ x: 50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 1, delay: 0.5 }}
+            >
+              <div className="lp-hero-thumbnail float-animation">
                 <img 
                   src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=600&auto=format&fit=crop" 
                   alt="Thumbnail destination" 
                 />
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Floating Search Bar - Mapped to ExplorePage functionality */}
-      <div className="lp-search-wrapper">
-        <form onSubmit={handleSearchSubmit} className="lp-search-bar">
-          <div className="lp-search-field">
-            <MapPin size={20} className="lp-field-icon" />
+      {/* Floating Search Bar */}
+      <motion.div 
+        className="lp-search-wrapper"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 1, duration: 0.8 }}
+      >
+        <form onSubmit={handleSearchSubmit} className="lp-search-bar glass-panel">
+          <div className="lp-search-field hover-glow">
+            <MapPin size={20} className="lp-field-icon text-accent" />
             <div className="lp-field-text">
               <label>Search cities...</label>
             </div>
           </div>
           <div className="lp-search-divider"></div>
-          <div className="lp-search-field">
-            <Globe size={20} className="lp-field-icon" />
+          <div className="lp-search-field hover-glow">
+            <Globe size={20} className="lp-field-icon text-accent" />
             <div className="lp-field-text">
               <label>Region (All)</label>
             </div>
             <ChevronDown size={16} className="lp-chevron" />
           </div>
-          <button type="submit" className="lp-search-submit">
+          <button type="submit" className="lp-search-submit glow-on-hover">
             <Search size={20} color="#fff" />
           </button>
         </form>
-      </div>
+      </motion.div>
 
-      {/* Recommended Destinations - Uses actual seed data from project */}
-      <section className="lp-destinations" id="destinations">
+      {/* Recommended Destinations */}
+      <motion.section 
+        className="lp-destinations" 
+        id="destinations"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        variants={fadeUp}
+      >
         <div className="lp-section-header">
           <h2>Curated Destinations</h2>
           <div className="lp-slider-controls">
-            <button className="lp-slider-btn"><ArrowLeft size={18}/></button>
-            <button className="lp-slider-btn"><ArrowRight size={18}/></button>
+            <button className="lp-slider-btn btn-magnetic"><ArrowLeft size={18}/></button>
+            <button className="lp-slider-btn btn-magnetic"><ArrowRight size={18}/></button>
           </div>
         </div>
         
-        <div className="lp-cards-grid">
-          {/* Card 1: Paris */}
-          <div className="lp-card">
-            <div className="lp-card-image-wrap">
-              <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800" alt="Paris" />
-              <div className="lp-badge lp-badge-top-right">
-                <span className="lp-flag">🇫🇷</span> France
-              </div>
-              <div className="lp-badge lp-badge-bottom-left">
-                <span className="lp-star">★</span> 9.8
-              </div>
-            </div>
-            <div className="lp-card-body">
-              <h3>Paris</h3>
-              <p>The City of Light is renowned for its world-class art, fashion, gastronomy, and culture...</p>
-              <Link to="/explore" className="lp-card-cta">
-                View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
-              </Link>
+        <motion.div className="lp-cards-grid hide-scrollbar" variants={staggerContainer}>
+          {[
+            { name: 'Paris', country: 'France', flag: '🇫🇷', score: '9.8', img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800', desc: 'The City of Light is renowned for its world-class art, fashion, gastronomy, and culture.' },
+            { name: 'Rome', country: 'Italy', flag: '🇮🇹', score: '9.6', img: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800', desc: 'A living open-air museum boasting nearly 3,000 years of globally influential art and architecture.' },
+            { name: 'Tokyo', country: 'Japan', flag: '🇯🇵', score: '9.9', img: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800', desc: 'Mixes ultra-modern skyscrapers and neon signs with historic temples. A culinary capital.' },
+            { name: 'Bali', country: 'Indonesia', flag: '🇮🇩', score: '9.5', img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800', desc: 'An island paradise known for its forested volcanic mountains, iconic rice paddies, and coral reefs.' },
+            { name: 'Prague', country: 'Czech Rep', flag: '🇨🇿', score: '9.3', img: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=800', desc: 'Known as the City of a Hundred Spires, featuring colorful baroque buildings and Gothic churches.' },
+            { name: 'Vienna', country: 'Austria', flag: '🇦🇹', score: '9.4', img: 'https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=800', desc: 'Austria’s capital lies in the country’s east on the Danube River. Known for its Imperial palaces.' },
+            { name: 'Lisbon', country: 'Portugal', flag: '🇵🇹', score: '9.5', img: 'https://images.unsplash.com/photo-1548707309-dcebe6120111?w=800', desc: 'A coastal capital city known for its cafe culture and soulful Fado music.' },
+            { name: 'Athens', country: 'Greece', flag: '🇬🇷', score: '9.2', img: 'https://images.unsplash.com/photo-1518105779142-d9715649bbde?w=800', desc: 'The heart of Ancient Greece, a powerful civilization and empire.' },
+          ].map((city, i) => (
+            <motion.div key={i} variants={fadeUp}>
+              <TiltCard>
+                <div className="lp-card glass-card">
+                  <div className="lp-card-image-wrap">
+                    <img src={city.img} alt={city.name} className="scale-on-hover" />
+                    <div className="lp-badge lp-badge-top-right glass-badge">
+                      <span className="lp-flag">{city.flag}</span> {city.country}
+                    </div>
+                    <div className="lp-badge lp-badge-bottom-left glass-badge text-accent">
+                      <span className="lp-star">★</span> {city.score}
+                    </div>
+                  </div>
+                  <div className="lp-card-body">
+                    <h3>{city.name}</h3>
+                    <p>{city.desc}</p>
+                    <Link to="/explore" className="lp-card-cta hover-underline">
+                      View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
+                    </Link>
+                  </div>
+                </div>
+              </TiltCard>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* NEW: AI Itinerary Magic Section */}
+      <motion.section 
+        className="lp-ai-magic" 
+        id="ai-magic"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        variants={fadeUp}
+      >
+        <div className="lp-ai-container glass-panel-dark">
+          <div className="lp-ai-content">
+            <Sparkles size={32} className="text-accent float-animation" />
+            <h2 className="gradient-text">Intelligent Itinerary Generation</h2>
+            <p>Our machine learning engine builds personalized day-by-day plans in seconds. We optimize travel routes, predict precise budget requirements, and match activities exactly to your vibe.</p>
+            
+            <div className="lp-ai-stats">
+              <motion.div className="ai-stat-box" whileHover={{ scale: 1.05 }}>
+                <Map className="text-accent mb-2" size={24}/>
+                <h4>Smart Routing</h4>
+                <span>Eliminates zigzagging across the city</span>
+              </motion.div>
+              <motion.div className="ai-stat-box" whileHover={{ scale: 1.05 }}>
+                <CalendarClock className="text-accent mb-2" size={24}/>
+                <h4>Pacing Engine</h4>
+                <span>Ensures you're never rushed or bored</span>
+              </motion.div>
             </div>
           </div>
-
-          {/* Card 2: Rome */}
-          <div className="lp-card">
-            <div className="lp-card-image-wrap">
-              <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800" alt="Rome" />
-              <div className="lp-badge lp-badge-top-right">
-                <span className="lp-flag">🇮🇹</span> Italy
-              </div>
-              <div className="lp-badge lp-badge-bottom-left">
-                <span className="lp-star">★</span> 9.6
-              </div>
-            </div>
-            <div className="lp-card-body">
-              <h3>Rome</h3>
-              <p>A living open-air museum boasting nearly 3,000 years of globally influential art and architecture...</p>
-              <Link to="/explore" className="lp-card-cta">
-                View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 3: Tokyo */}
-          <div className="lp-card">
-            <div className="lp-card-image-wrap">
-              <img src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800" alt="Tokyo" />
-              <div className="lp-badge lp-badge-top-right">
-                <span className="lp-flag">🇯🇵</span> Japan
-              </div>
-              <div className="lp-badge lp-badge-bottom-left">
-                <span className="lp-star">★</span> 9.9
-              </div>
-            </div>
-            <div className="lp-card-body">
-              <h3>Tokyo</h3>
-              <p>Mixes ultra-modern skyscrapers and neon signs with historic temples. A culinary capital...</p>
-              <Link to="/explore" className="lp-card-cta">
-                View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 4: Bali */}
-          <div className="lp-card">
-            <div className="lp-card-image-wrap">
-              <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800" alt="Bali" />
-              <div className="lp-badge lp-badge-top-right">
-                <span className="lp-flag">🇮🇩</span> Indonesia
-              </div>
-              <div className="lp-badge lp-badge-bottom-left">
-                <span className="lp-star">★</span> 9.5
-              </div>
-            </div>
-            <div className="lp-card-body">
-              <h3>Bali</h3>
-              <p>An island paradise known for its forested volcanic mountains, iconic rice paddies, and coral reefs...</p>
-              <Link to="/explore" className="lp-card-cta">
-                View Destination <ArrowRight size={14} className="lp-cta-arrow"/>
-              </Link>
-            </div>
+          <div className="lp-ai-visual">
+            <TiltCard>
+              <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800" alt="Data Visualization" className="rounded-xl shadow-2xl ai-image" />
+            </TiltCard>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      {/* Features Section - Uses existing "How it works" content */}
-      <section className="lp-elevate" id="how-it-works">
+      {/* Features Section */}
+      <motion.section 
+        className="lp-elevate" 
+        id="how-it-works"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+        variants={fadeUp}
+      >
         <div className="lp-elevate-left">
           <h2>The perfect route, mapped out</h2>
           <p className="lp-elevate-desc">
@@ -205,101 +314,110 @@ export default function LandingPage() {
           </p>
           
           <div className="lp-features-grid">
-            <div className="lp-feature">
-              <div className="lp-feature-icon-wrapper"><Calculator size={20}/></div>
+            <motion.div className="lp-feature hover-lift" whileHover={{ y: -5 }}>
+              <div className="lp-feature-icon-wrapper pulse-glow"><Calculator size={20}/></div>
               <div>
                 <h4>AI-Powered Budget Predictor</h4>
                 <p>Stop guessing how much you'll spend. Our trained ML model predicts your exact costs.</p>
               </div>
-            </div>
-            <div className="lp-feature">
-              <div className="lp-feature-icon-wrapper"><Compass size={20}/></div>
+            </motion.div>
+            <motion.div className="lp-feature hover-lift" whileHover={{ y: -5 }}>
+              <div className="lp-feature-icon-wrapper pulse-glow"><Compass size={20}/></div>
               <div>
                 <h4>Discover your next obsession</h4>
                 <p>Browse highly-curated destinations based on your travel style and region.</p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
         <div className="lp-elevate-right">
-          <div className="lp-elevate-image-wrap">
-            <img 
-              src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop" 
-              alt="Interactive Map Visualization" 
-            />
-            <div className="lp-elevate-badge lp-badge-tl">
-              <Route size={14} style={{ marginRight: '6px' }} /> 15+ Map Styles
+          <TiltCard>
+            <div className="lp-elevate-image-wrap rounded-2xl overflow-hidden shadow-2xl glass-panel">
+              <img 
+                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop" 
+                alt="Interactive Map Visualization" 
+                className="scale-on-hover"
+              />
+              <div className="lp-elevate-badge lp-badge-tl glass-badge-dark">
+                <Route size={14} style={{ marginRight: '6px' }} /> 15+ Map Styles
+              </div>
+              <div className="lp-elevate-badge lp-badge-tr glass-badge-dark text-accent">
+                94% Accuracy
+              </div>
             </div>
-            <div className="lp-elevate-badge lp-badge-tr">
-              94% Accuracy
-            </div>
-          </div>
+          </TiltCard>
         </div>
-      </section>
+      </motion.section>
 
-      {/* Kept Functionality: Stats Strip & Testimonials (Restyled to match reference aesthetic) */}
-      <section className="lp-stats-section">
+      {/* Stats Strip */}
+      <motion.section 
+        className="lp-stats-section"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1 }}
+      >
         <div className="lp-stats-grid">
-          <div className="lp-stat">
-            <h3>20+</h3>
-            <p>Destinations</p>
-          </div>
-          <div className="lp-stat">
-            <h3>100+</h3>
-            <p>Activities</p>
-          </div>
-          <div className="lp-stat">
-            <h3>50k</h3>
-            <p>Trips Planned</p>
-          </div>
+          {[ { num: '20+', label: 'Destinations' }, { num: '100+', label: 'Activities' }, { num: '50k', label: 'Trips Planned' } ].map((stat, i) => (
+            <motion.div 
+              key={i} 
+              className="lp-stat hover-lift"
+              initial={{ scale: 0.5, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.2, type: "spring", stiffness: 100 }}
+              whileHover={{ y: -10 }}
+            >
+              <h3 className="gradient-text">{stat.num}</h3>
+              <p>{stat.label}</p>
+            </motion.div>
+          ))}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="lp-testimonials">
+      {/* Testimonials */}
+      <motion.section 
+        className="lp-testimonials"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeUp}
+      >
         <h2 style={{ textAlign: 'center', marginBottom: '40px', fontSize: '32px' }}>Don't just take our word for it</h2>
         <div className="lp-testimonials-grid">
-          <div className="lp-testimonial-card">
-            <p className="lp-testimonial-quote">"TRIPORA completely changed how I plan my solo trips. The budget predictor was spot on for my week in Tokyo."</p>
-            <div className="lp-testimonial-author">
-              <div className="lp-avatar">A</div>
-              <div>
-                <div className="lp-author-name">Aisha</div>
-                <div className="lp-author-title">Solo Traveler</div>
+          {[
+            { quote: "TRIPORA completely changed how I plan my solo trips. The budget predictor was spot on for my week in Tokyo.", initials: "A", name: "Aisha", title: "Solo Traveler" },
+            { quote: "Finally, a tool that lets our whole friend group collaborate in real-time without using a messy spreadsheet.", initials: "M", name: "Marcus", title: "Group Trip Organizer" },
+            { quote: "The interactive map view is a lifesaver. Being able to see how far apart activities are saved us so much transit time.", initials: "S", name: "Sarah", title: "Digital Nomad" }
+          ].map((test, i) => (
+            <motion.div 
+              key={i} 
+              className="lp-testimonial-card glass-card hover-lift"
+              variants={fadeUp}
+              whileHover={{ y: -10, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15)" }}
+            >
+              <p className="lp-testimonial-quote">"{test.quote}"</p>
+              <div className="lp-testimonial-author">
+                <div className="lp-avatar">{test.initials}</div>
+                <div>
+                  <div className="lp-author-name">{test.name}</div>
+                  <div className="lp-author-title">{test.title}</div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="lp-testimonial-card">
-            <p className="lp-testimonial-quote">"Finally, a tool that lets our whole friend group collaborate in real-time without using a messy spreadsheet."</p>
-            <div className="lp-testimonial-author">
-              <div className="lp-avatar">M</div>
-              <div>
-                <div className="lp-author-name">Marcus</div>
-                <div className="lp-author-title">Group Trip Organizer</div>
-              </div>
-            </div>
-          </div>
-          <div className="lp-testimonial-card">
-            <p className="lp-testimonial-quote">"The interactive map view is a lifesaver. Being able to see how far apart activities are saved us so much transit time."</p>
-            <div className="lp-testimonial-author">
-              <div className="lp-avatar">S</div>
-              <div>
-                <div className="lp-author-name">Sarah</div>
-                <div className="lp-author-title">Digital Nomad</div>
-              </div>
-            </div>
-          </div>
+            </motion.div>
+          ))}
         </div>
-      </section>
+      </motion.section>
 
-      {/* Footer - Uses existing links */}
+      {/* Footer */}
       <footer className="lp-footer">
         <div className="lp-footer-content">
-          <div className="lp-footer-logo">TRIPORA</div>
+          <div className="lp-footer-logo magnetic-text">TRIPORA</div>
           <div className="lp-footer-links">
-            <a href="#how-it-works">Features</a>
-            <a href="#destinations">About</a>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
+            <a href="#how-it-works" className="hover-underline">Features</a>
+            <a href="#destinations" className="hover-underline">About</a>
+            <a href="#" className="hover-underline">Privacy</a>
+            <a href="#" className="hover-underline">Terms</a>
           </div>
         </div>
       </footer>
