@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, LayerGroup, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin, Navigation, Plane, Train, Car, Bus } from "lucide-react";
@@ -105,22 +105,20 @@ export function TripMap({ stops = [], selectedStopId = null, onStopClick, trip =
 
   // Helper to determine the transit mode for a given leg between stopA and stopB
   const getLegMode = (stopA, stopB) => {
-    if (!trip?.transit_legs) return trip?.transit_mode || "road";
+    if (!trip?.transit_legs || trip.transit_legs.length === 0) return trip?.transit_mode || "road";
 
     // Find matching leg in trip.transit_legs
     const leg = trip.transit_legs.find(
-      (l) => l.from_stop_id === stopA.id && l.to_stop_id === stopB.id
-    ) || trip.transit_legs.find(
-      (l) => l.to_stop_id === stopB.id
+      (l) => (l.from_stop_id === stopA.id && l.to_stop_id === stopB.id) || (l.to_stop_id === stopB.id)
     );
 
     if (leg) {
-      if (leg.selected_option?.mode) return leg.selected_option.mode;
-      if (leg.selected_option_id && leg.options) {
+      if (leg.selected_option_id && Array.isArray(leg.options)) {
         const opt = leg.options.find((o) => o.id === leg.selected_option_id);
         if (opt?.mode) return opt.mode;
       }
-      if (leg.options && leg.options.length > 0) {
+      if (leg.selected_option?.mode) return leg.selected_option.mode;
+      if (Array.isArray(leg.options) && leg.options.length > 0) {
         return leg.options[0].mode;
       }
     }
@@ -155,7 +153,7 @@ export function TripMap({ stops = [], selectedStopId = null, onStopClick, trip =
         try {
           const routeResult = await getLegRouteGeometry(lat1, lon1, lat2, lon2, mode);
           computed.push({
-            id: `${stopA.id}_${stopB.id}`,
+            id: `${stopA.id}_${stopB.id}_${mode}`,
             fromName: stopA.city.name,
             toName: stopB.city.name,
             mode: routeResult.mode,
@@ -164,7 +162,7 @@ export function TripMap({ stops = [], selectedStopId = null, onStopClick, trip =
         } catch (err) {
           // Fallback straight segment if calculation error
           computed.push({
-            id: `${stopA.id}_${stopB.id}`,
+            id: `${stopA.id}_${stopB.id}_${mode}`,
             fromName: stopA.city.name,
             toName: stopB.city.name,
             mode: mode,
@@ -184,7 +182,7 @@ export function TripMap({ stops = [], selectedStopId = null, onStopClick, trip =
     return () => {
       isMounted = false;
     };
-  }, [stops, trip?.transit_legs, trip?.transit_mode]);
+  }, [stops, trip?.transit_legs, JSON.stringify(trip?.transit_legs?.map(l => l.selected_option_id || l.selected_option?.id)), trip?.transit_mode]);
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -220,9 +218,9 @@ export function TripMap({ stops = [], selectedStopId = null, onStopClick, trip =
           }
 
           if (leg.mode === "train") {
-            // Train: Dual-layer railway line (amber base + white railway tie dashes)
+            // Train: Dual-layer railway line (amber base + white railway tie dashes) inside LayerGroup
             return (
-              <div key={leg.id}>
+              <LayerGroup key={leg.id}>
                 <Polyline
                   positions={leg.coordinates}
                   pathOptions={{
@@ -241,7 +239,7 @@ export function TripMap({ stops = [], selectedStopId = null, onStopClick, trip =
                     dashArray: "4 12",
                   }}
                 />
-              </div>
+              </LayerGroup>
             );
           }
 

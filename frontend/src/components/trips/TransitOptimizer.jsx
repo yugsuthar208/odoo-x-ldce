@@ -4,7 +4,7 @@ import { useToast } from '../common/Toast';
 import { Train, Plane, Bus, Car, Clock, Compass, ArrowRight, CheckCircle2, Navigation } from 'lucide-react';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 
-export default function TransitOptimizer({ trip, onRefresh }) {
+export default function TransitOptimizer({ trip, onRefresh, onSelectOption }) {
   const { addToast } = useToast();
   const [selectedMode, setSelectedMode] = useState('all');
   const [loadingLeg, setLoadingLeg] = useState(null);
@@ -24,11 +24,15 @@ export default function TransitOptimizer({ trip, onRefresh }) {
     }
   };
 
-  const handleSelectOption = async (legId, optionId) => {
+  const handleSelectOption = async (legId, optionId, optMode) => {
     setLoadingLeg(legId);
+    // Instant live UI/Map update
+    if (onSelectOption) {
+      onSelectOption(legId, optionId, optMode);
+    }
     try {
       await tripService.selectTransitOption(trip.id, legId, optionId);
-      addToast({ message: "Transit option selected & budget recalculated!" });
+      addToast({ message: `Switched route to ${optMode.toUpperCase()} & updated map!` });
       if (onRefresh) onRefresh();
     } catch (err) {
       addToast({ message: err.message || "Failed to select option", type: "error" });
@@ -256,7 +260,7 @@ export default function TransitOptimizer({ trip, onRefresh }) {
                         {/* Action Button */}
                         <button
                           disabled={loadingLeg === leg.id}
-                          onClick={() => handleSelectOption(leg.id, opt.id)}
+                          onClick={() => handleSelectOption(leg.id, opt.id, opt.mode)}
                           className={`btn btn--sm ${isSelected ? 'btn--primary' : 'btn--secondary'}`}
                           style={{
                             width: "100%",

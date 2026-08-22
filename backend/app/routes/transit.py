@@ -113,6 +113,7 @@ async def select_transit_option(
     leg.selected_option = option
     db.add(leg)
     await db.flush()
+    await db.commit()
     
     # Recalculate and fetch budget
     from app.services.budget_service import BudgetService
@@ -120,6 +121,12 @@ async def select_transit_option(
     
     return APIResponse(
         success=True,
-        data={"budget": updated_budget},
+        data={
+            "leg_id": leg.id,
+            "selected_option_id": option.id,
+            "mode": option.mode,
+            "provider": option.provider,
+            "budget": updated_budget
+        },
         message="Transit option selected successfully. Budget recalculated."
     )

@@ -94,6 +94,27 @@ export default function TripDetailPage() {
     }
   };
 
+  const handleSelectTransitOption = (legId, optionId, optionMode) => {
+    setTrip(prev => {
+      if (!prev) return prev;
+      const updatedLegs = (prev.transit_legs || []).map(l => {
+        if (l.id === legId) {
+          const selectedOpt = l.options?.find(o => o.id === optionId) || { id: optionId, mode: optionMode };
+          return {
+            ...l,
+            selected_option_id: optionId,
+            selected_option: selectedOpt,
+          };
+        }
+        return l;
+      });
+      return {
+        ...prev,
+        transit_legs: updatedLegs,
+      };
+    });
+  };
+
   if (loading) return <PageLoader />;
   if (error || !trip) return <ErrorState message={error || "Trip not found"} onRetry={loadTrip} />;
 
@@ -223,6 +244,7 @@ export default function TripDetailPage() {
               <TransitOptimizer 
                 trip={trip} 
                 onRefresh={loadTrip}
+                onSelectOption={handleSelectTransitOption}
               />
             )}
 
