@@ -22,7 +22,7 @@ export default function LandingPage() {
           <a href="#">Terms</a>
         </div>
         <div className="lp-nav-center">
-          <span className="lp-logo-text">GlobeTrotter</span>
+          <span className="lp-logo-text">TRIPORA</span>
         </div>
         <div className="lp-nav-right">
           <Link to="/login" className="lp-lang-btn" style={{ textDecoration: 'none' }}>Log In</Link>
@@ -43,7 +43,7 @@ export default function LandingPage() {
           />
           <div className="lp-hero-overlay"></div>
 
-          <h1 className="lp-hero-title" style={{ fontSize: '13vw' }}>GLOBETROTTER</h1>
+          <h1 className="lp-hero-title" style={{ fontSize: '13vw' }}>TRIPORA</h1>
           
           <div className="lp-hero-content">
             <div className="lp-hero-left">
@@ -294,7 +294,7 @@ export default function LandingPage() {
       {/* Footer - Uses existing links */}
       <footer className="lp-footer">
         <div className="lp-footer-content">
-          <div className="lp-footer-logo">GlobeTrotter</div>
+          <div className="lp-footer-logo">TRIPORA</div>
           <div className="lp-footer-links">
             <a href="#how-it-works">Features</a>
             <a href="#destinations">About</a>
