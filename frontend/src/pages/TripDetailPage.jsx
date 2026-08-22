@@ -234,13 +234,17 @@ export default function TripDetailPage() {
 
             {activeTab === "budget" && <TripBudget tripId={trip.id} budget={trip.budget} onRefresh={loadTrip} />}
             {activeTab === "collab" && <TripCollab tripId={trip.id} visibility={trip.visibility} />}
-            {activeTab === "map" && <div className="hide-desktop">Map view takes full screen on mobile.</div>}
+            {activeTab === "map" && (
+              <div style={{ height: "calc(100vh - 180px)", borderRadius: "var(--radius-card)", overflow: "hidden" }}>
+                <TripMap stops={stops} selectedStopId={selectedStopId} onStopClick={(s) => setSelectedStopId(s.id)} trip={trip} />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Right Map Pane */}
         <div style={{ flex: 1, position: "relative", background: "var(--surface)" }} className="hide-mobile">
-          <TripMap stops={stops} selectedStopId={selectedStopId} onStopClick={(s) => setSelectedStopId(s.id)} />
+          <TripMap stops={stops} selectedStopId={selectedStopId} onStopClick={(s) => setSelectedStopId(s.id)} trip={trip} />
           {activeTab === "itinerary" && (
             <StopDetailBar
               selectedStop={selectedStop}
