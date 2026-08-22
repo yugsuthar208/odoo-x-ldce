@@ -1039,3 +1039,15 @@ button {
   font-weight: 500;
   margin: 0;
 }
+
+/* Vibe Section Responsive */
+@media (max-width: 900px) {
+  .vibe-container {
+    flex-direction: column !important;
+  }
+  .vibe-text {
+    position: relative !important;
+    top: 0 !important;
+    margin-bottom: 40px;
+  }
+}
