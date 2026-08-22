@@ -45,9 +45,10 @@ export default function TripDetailPage() {
     tripService.getTrip(id)
       .then(res => {
         const rawData = res?.data || res;
+        const budgetObj = rawData.budget || rawData.budget_summary;
         const tripData = rawData?.trip 
-          ? { ...rawData.trip, stops: rawData.stops || rawData.trip.stops || [], budget_summary: rawData.budget, transit_legs: rawData.transit_legs || [], stays: rawData.stays || [], warnings: rawData.warnings || [] }
-          : rawData;
+          ? { ...rawData.trip, stops: rawData.stops || rawData.trip.stops || [], budget: budgetObj, budget_summary: budgetObj, transit_legs: rawData.transit_legs || [], stays: rawData.stays || [], warnings: rawData.warnings || [] }
+          : { ...rawData, budget: rawData.budget || rawData.budget_summary || rawData };
         setTrip(tripData);
         if (tripData?.stops?.length > 0) {
           setSelectedStopId(prev => (prev && tripData.stops.some(s => s.id === prev) ? prev : tripData.stops[0].id));

@@ -305,6 +305,11 @@ async def delete_trip(db: AsyncSession, trip_id: str, current_user: User) -> dic
         details={"title": trip.title},
     )
 
+    from app.models.transit import TransitLeg
+    legs_res = await db.execute(select(TransitLeg).where(TransitLeg.trip_id == trip.id))
+    for leg in legs_res.scalars().all():
+        await db.delete(leg)
+
     await db.delete(trip)
     await db.flush()
 
