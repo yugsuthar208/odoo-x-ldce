@@ -1,251 +1,262 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import "./LandingPage.css";
-
-// Utility for scroll animations
-function useScrollReveal() {
-  const [elements, setElements] = useState([]);
-  
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    const targetElements = document.querySelectorAll('.scroll-reveal');
-    targetElements.forEach((el) => observer.observe(el));
-    setElements(targetElements);
-
-    return () => {
-      targetElements.forEach((el) => observer.unobserve(el));
-    };
-  }, []);
-}
-
-function AnimatedCounter({ end, duration = 2000 }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    let startTime;
-    let observer;
-    let hasRun = false;
-
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = timestamp - startTime;
-      const percentage = Math.min(progress / duration, 1);
-      
-      // Easing function: easeOutQuart
-      const easeOut = 1 - Math.pow(1 - percentage, 4);
-      setCount(Math.floor(easeOut * end));
-
-      if (progress < duration) {
-        requestAnimationFrame(animate);
-      } else {
-        setCount(end);
-      }
-    };
-
-    observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !hasRun) {
-        hasRun = true;
-        requestAnimationFrame(animate);
-      }
-    }, { threshold: 0.5 });
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (observer && ref.current) observer.unobserve(ref.current);
-    };
-  }, [end, duration]);
-
-  return <span ref={ref}>{count}</span>;
-}
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Search, MapPin, Calendar, Mountain, ChevronDown, ArrowRight, ArrowLeft, Menu } from 'lucide-react';
+import './LandingPage.css';
 
 export default function LandingPage() {
-  useScrollReveal();
-
-  const handleMouseMove = (e) => {
-    const mockup = document.getElementById('hero-mockup');
-    if (!mockup) return;
-    
-    // Parallax drift based on mouse position
-    const { clientX, clientY } = e;
-    const { innerWidth, innerHeight } = window;
-    
-    const x = (clientX / innerWidth - 0.5) * 12; // max 6px drift
-    const y = (clientY / innerHeight - 0.5) * 12;
-
-    mockup.style.transform = `translate(${x}px, ${y}px)`;
-  };
-
   return (
-    <div className="landing-page" onMouseMove={handleMouseMove}>
-      
-      {/* 1. Hero Section */}
-      <section className="hero">
-        <div className="hero-content scroll-reveal">
-          <h1 className="hero-title">Plan trips that plan themselves</h1>
-          <p className="hero-subtitle">
-            Say goodbye to chaotic spreadsheets. TRIPORA uses AI to build your itinerary, predict your budget, and keep your group in sync.
-          </p>
-          <div className="hero-actions">
-            <Link to="/signup" className="btn btn--accent">Start planning free</Link>
-            <a href="#how-it-works" className="btn btn--ghost">See how it works</a>
+    <div className="lp-wrapper">
+      {/* Navbar */}
+      <nav className="lp-navbar">
+        <div className="lp-nav-left">
+          <a href="#destinations">Destinations</a>
+          <a href="#package">Package</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#about">About Us</a>
+        </div>
+        <div className="lp-nav-center">
+          <span className="lp-logo-text">GlobeTrotter</span>
+        </div>
+        <div className="lp-nav-right">
+          <button className="lp-lang-btn">EN</button>
+          <Link to="/login" className="lp-btn-talk">Let's Talk</Link>
+          <button className="lp-menu-btn">
+            <Menu size={20} />
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="lp-hero-section">
+        <div className="lp-hero-container">
+          <img 
+            src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2940&auto=format&fit=crop" 
+            alt="Cinematic landscape" 
+            className="lp-hero-bg" 
+          />
+          
+          <div className="lp-hero-overlay"></div>
+
+          <h1 className="lp-hero-title">GLOBETROTTER</h1>
+          
+          <div className="lp-hero-content">
+            <div className="lp-hero-left">
+              <p className="lp-hero-subtitle">
+                EXPLORE THE<br/>
+                BEAUTY OF NATURE<br/>
+                LIKE NEVER BEFORE
+              </p>
+              <Link to="/signup" className="lp-btn-start">
+                <div className="lp-btn-icon"><ArrowRight size={14} color="#000" /></div>
+                <span>START YOUR JOURNEY</span>
+              </Link>
+            </div>
+            
+            <div className="lp-hero-center">
+              <div className="lp-scroll-indicator">
+                <div className="lp-mouse">
+                  <div className="lp-wheel"></div>
+                </div>
+                <span>Scroll Now</span>
+              </div>
+            </div>
+            
+            <div className="lp-hero-right">
+              <div className="lp-hero-thumbnail">
+                <img 
+                  src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?q=80&w=600&auto=format&fit=crop" 
+                  alt="Thumbnail destination" 
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="lp-hero-carousel-controls">
+            <button className="lp-carousel-btn"><ArrowLeft size={16}/></button>
+            <div className="lp-carousel-dots">
+              <span className="lp-dot active"></span>
+              <span className="lp-dot"></span>
+              <span className="lp-dot"></span>
+            </div>
+            <button className="lp-carousel-btn"><ArrowRight size={16}/></button>
+          </div>
+        </div>
+      </section>
+
+      {/* Floating Search Bar */}
+      <div className="lp-search-wrapper">
+        <div className="lp-search-bar">
+          <div className="lp-search-field">
+            <MapPin size={20} className="lp-field-icon" />
+            <div className="lp-field-text">
+              <label>City or address</label>
+            </div>
+          </div>
+          <div className="lp-search-divider"></div>
+          <div className="lp-search-field">
+            <Calendar size={20} className="lp-field-icon" />
+            <div className="lp-field-text">
+              <label>Add Dates</label>
+            </div>
+          </div>
+          <div className="lp-search-divider"></div>
+          <div className="lp-search-field">
+            <Mountain size={20} className="lp-field-icon" />
+            <div className="lp-field-text">
+              <label>Landscape Type</label>
+            </div>
+            <ChevronDown size={16} className="lp-chevron" />
+          </div>
+          <button className="lp-search-submit">
+            <Search size={20} color="#fff" />
+          </button>
+        </div>
+      </div>
+
+      {/* Recommended Destinations */}
+      <section className="lp-destinations" id="destinations">
+        <div className="lp-section-header">
+          <h2>Recommended Destination</h2>
+          <div className="lp-slider-controls">
+            <button className="lp-slider-btn"><ArrowLeft size={18}/></button>
+            <button className="lp-slider-btn"><ArrowRight size={18}/></button>
           </div>
         </div>
         
-        <div className="hero-mockup-container scroll-reveal" style={{ transitionDelay: "200ms" }}>
-          <div className="browser-mockup" id="hero-mockup" style={{ transition: "transform 0.1s ease-out" }}>
-            <div className="browser-header">
-              <div className="browser-dot"></div>
-              <div className="browser-dot"></div>
-              <div className="browser-dot"></div>
+        <div className="lp-cards-grid">
+          {/* Card 1 */}
+          <div className="lp-card">
+            <div className="lp-card-image-wrap">
+              <img src="https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=600" alt="Australia" />
+              <div className="lp-badge lp-badge-top-right">
+                <span className="lp-flag">🇦🇺</span> Australia
+              </div>
+              <div className="lp-badge lp-badge-bottom-left">
+                <span className="lp-star">★</span> 4.9
+              </div>
             </div>
-            <div className="browser-content skeleton-ui">
-              TRIPORA DASHBOARD MOCKUP
+            <div className="lp-card-body">
+              <h3>Sunset Cruise in Whitehaven Beach</h3>
+              <p>Sail through the stunning Whitsunday Islands with incredible ocean views...</p>
+              <Link to="/explore" className="lp-card-cta">
+                Booking Now <ArrowRight size={14} className="lp-cta-arrow"/>
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="lp-card">
+            <div className="lp-card-image-wrap">
+              <img src="https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?q=80&w=600" alt="Switzerland" />
+              <div className="lp-badge lp-badge-top-right">
+                <span className="lp-flag">🇨🇭</span> Switzerland
+              </div>
+              <div className="lp-badge lp-badge-bottom-left">
+                <span className="lp-star">★</span> 4.8
+              </div>
+            </div>
+            <div className="lp-card-body">
+              <h3>Mount Titlis and Lucerne Day Tour</h3>
+              <p>Experience the snowy peaks of Mount Titlis and the beautiful city of Lucerne...</p>
+              <Link to="/explore" className="lp-card-cta">
+                Booking Now <ArrowRight size={14} className="lp-cta-arrow"/>
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="lp-card">
+            <div className="lp-card-image-wrap">
+              <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=600" alt="Greece" />
+              <div className="lp-badge lp-badge-top-right">
+                <span className="lp-flag">🇬🇷</span> Greece
+              </div>
+              <div className="lp-badge lp-badge-bottom-left">
+                <span className="lp-star">★</span> 4.9
+              </div>
+            </div>
+            <div className="lp-card-body">
+              <h3>Santorini Volcano and Hot Springs</h3>
+              <p>Explore the volcanic islands and swim in the therapeutic hot springs...</p>
+              <Link to="/explore" className="lp-card-cta">
+                Booking Now <ArrowRight size={14} className="lp-cta-arrow"/>
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 4 */}
+          <div className="lp-card">
+            <div className="lp-card-image-wrap">
+              <img src="https://images.unsplash.com/photo-1527004013197-933c4bcc61f4?q=80&w=600" alt="Japan" />
+              <div className="lp-badge lp-badge-top-right">
+                <span className="lp-flag">🇯🇵</span> Japan
+              </div>
+              <div className="lp-badge lp-badge-bottom-left">
+                <span className="lp-star">★</span> 4.7
+              </div>
+            </div>
+            <div className="lp-card-body">
+              <h3>Mount Fuji and Hakone Day Trip</h3>
+              <p>See the iconic Mount Fuji and take a relaxing cruise on Lake Ashi...</p>
+              <Link to="/explore" className="lp-card-cta">
+                Booking Now <ArrowRight size={14} className="lp-cta-arrow"/>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. Feature Sections */}
-      <div id="how-it-works">
-        <section className="landing-section feature-section scroll-reveal">
-          <div className="feature-text">
-            <h2>The perfect route, mapped out</h2>
-            <p>Visualize your entire journey on an interactive map. Adjust stops, reorganize days, and let TRIPORA optimize the travel time between your destinations.</p>
-            <div className="feature-stat">15+</div>
-            <p style={{ marginTop: '8px', fontSize: '0.875rem' }}>Map styles available</p>
-          </div>
-          <div className="feature-visual">
-            <div className="browser-mockup">
-              <div className="browser-header">
-                <div className="browser-dot"></div><div className="browser-dot"></div><div className="browser-dot"></div>
+      {/* Elevate Your Adventures */}
+      <section className="lp-elevate" id="about">
+        <div className="lp-elevate-left">
+          <h2>Elevate Your Adventures</h2>
+          <p className="lp-elevate-desc">
+            Discover a world of new possibilities with GlobeTrotter. Your journey begins here, where every detail is crafted for your perfect experience. Let us guide you to the most breathtaking destinations on Earth.
+          </p>
+          
+          <div className="lp-features-grid">
+            <div className="lp-feature">
+              <div className="lp-feature-icon-wrapper">✦</div>
+              <div>
+                <h4>Diving and Snorkeling</h4>
+                <p>Explore the breathtaking underwater world with expert guides.</p>
               </div>
-              <div className="browser-content skeleton-ui" style={{ height: "400px" }}>MAP VIEW MOCKUP</div>
             </div>
-          </div>
-        </section>
-
-        <section className="landing-section feature-section reverse scroll-reveal">
-          <div className="feature-text">
-            <h2>AI-Powered Budget Predictor</h2>
-            <p>Stop guessing how much you'll spend. Our trained ML model analyzes historical travel data to predict your exact costs across accommodation, food, and transport.</p>
-            <div className="feature-stat">94%</div>
-            <p style={{ marginTop: '8px', fontSize: '0.875rem' }}>Prediction Accuracy</p>
-          </div>
-          <div className="feature-visual">
-            <div className="browser-mockup">
-              <div className="browser-header">
-                <div className="browser-dot"></div><div className="browser-dot"></div><div className="browser-dot"></div>
+            <div className="lp-feature">
+              <div className="lp-feature-icon-wrapper">✧</div>
+              <div>
+                <h4>Professional Tour Guide</h4>
+                <p>Connect with local experts who know the land perfectly.</p>
               </div>
-              <div className="browser-content skeleton-ui" style={{ height: "400px" }}>BUDGET PREDICTOR MOCKUP</div>
             </div>
-          </div>
-        </section>
-
-        <section className="landing-section feature-section scroll-reveal">
-          <div className="feature-text">
-            <h2>Discover your next obsession</h2>
-            <p>Browse highly-curated destinations based on your travel style. Filter by region, budget index, and popularity to find the perfect spot.</p>
-            <div className="feature-stat">20+</div>
-            <p style={{ marginTop: '8px', fontSize: '0.875rem' }}>Curated Destinations</p>
-          </div>
-          <div className="feature-visual">
-            <div className="browser-mockup">
-              <div className="browser-header">
-                <div className="browser-dot"></div><div className="browser-dot"></div><div className="browser-dot"></div>
-              </div>
-              <div className="browser-content skeleton-ui" style={{ height: "400px" }}>EXPLORE GRID MOCKUP</div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* 3. Stats Strip */}
-      <section className="stats-strip scroll-reveal">
-        <div className="stats-grid">
-          <div className="stat-item">
-            <h3><AnimatedCounter end={20} />+</h3>
-            <p>Destinations</p>
-          </div>
-          <div className="stat-item">
-            <h3><AnimatedCounter end={100} />+</h3>
-            <p>Activities</p>
-          </div>
-          <div className="stat-item">
-            <h3><AnimatedCounter end={50} />k</h3>
-            <p>Trips Planned</p>
           </div>
         </div>
-      </section>
-
-      {/* 4. Testimonials */}
-      <section className="landing-section testimonials scroll-reveal">
-        <h2>Don't just take our word for it</h2>
-        <div className="testimonials-grid">
-          <div className="testimonial-card">
-            <p className="testimonial-quote">"TRIPORA completely changed how I plan my solo trips. The budget predictor was spot on for my week in Tokyo."</p>
-            <div className="testimonial-author">
-              <div className="testimonial-avatar">A</div>
-              <div>
-                <div className="testimonial-name">Aisha</div>
-                <div className="testimonial-title">Solo Traveler</div>
-              </div>
+        <div className="lp-elevate-right">
+          <div className="lp-elevate-image-wrap">
+            <img 
+              src="https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=800&auto=format&fit=crop" 
+              alt="Norway Fjords" 
+            />
+            <div className="lp-elevate-badge lp-badge-tl">
+              <span className="lp-flag">🇳🇴</span> Norway
             </div>
-          </div>
-          <div className="testimonial-card">
-            <p className="testimonial-quote">"Finally, a tool that lets our whole friend group collaborate in real-time without using a messy spreadsheet."</p>
-            <div className="testimonial-author">
-              <div className="testimonial-avatar">M</div>
-              <div>
-                <div className="testimonial-name">Marcus</div>
-                <div className="testimonial-title">Group Trip Organizer</div>
-              </div>
-            </div>
-          </div>
-          <div className="testimonial-card">
-            <p className="testimonial-quote">"The interactive map view is a lifesaver. Being able to see how far apart activities are saved us so much transit time."</p>
-            <div className="testimonial-author">
-              <div className="testimonial-avatar">S</div>
-              <div>
-                <div className="testimonial-name">Sarah</div>
-                <div className="testimonial-title">Digital Nomad</div>
-              </div>
+            <div className="lp-elevate-badge lp-badge-tr">
+              Recommended
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. Final CTA */}
-      <section className="final-cta scroll-reveal">
-        <h2>Ready to build your itinerary?</h2>
-        <Link to="/signup" className="btn btn--accent" style={{ fontSize: '1.125rem', padding: '16px 32px' }}>
-          Create your first trip
-        </Link>
-        <p style={{ marginTop: '16px', color: 'rgba(255,255,255,0.6)' }}>Free during beta</p>
-      </section>
-
-      {/* 6. Footer */}
-      <footer className="footer scroll-reveal">
-        <div className="footer-logo">TRIPORA</div>
-        <div className="footer-links">
-          <a href="#">About</a>
-          <a href="#">Features</a>
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
+      {/* Footer */}
+      <footer className="lp-footer">
+        <div className="lp-footer-content">
+          <div className="lp-footer-logo">GlobeTrotter</div>
+          <div className="lp-footer-links">
+            <a href="#destinations">Destinations</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Contact Us</a>
+          </div>
         </div>
       </footer>
     </div>
