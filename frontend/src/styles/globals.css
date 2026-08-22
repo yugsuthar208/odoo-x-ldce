@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    TRIPORA — Global Design System
    Design tokens, base styles, animations
    ============================================================ */
@@ -260,7 +260,9 @@ small { font-size: 0.8125rem; }
 /* ---- Page Wrapper ---- */
 .page {
   padding: 32px;
-  max-width: 1280px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
   animation: pageFade 0.3s ease both;
 }
 
