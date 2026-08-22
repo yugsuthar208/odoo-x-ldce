@@ -4,43 +4,6 @@ import { Search, MapPin, Globe, ChevronDown, ArrowRight, ArrowLeft, Menu, Star, 
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import './LandingPage.css';
 
-// --- VibeCard (Pinned Scroll Stack) ---
-function VibeCard({ styleData, index, progress }) {
-  const isBase = index === 0;
-  // Sequence them: 0.1->0.3, 0.4->0.6, 0.7->0.9
-  const start = index === 0 ? 0 : (index - 1) * 0.25 + 0.15;
-  const end = start + 0.25;
-  
-  const y = useTransform(progress, [start, end], [300, 0]);
-  const opacity = useTransform(progress, [start, end], [0, 1]);
-  const scale = useTransform(progress, [start, end], [0.9, 1]);
-
-  return (
-    <motion.div
-      style={{
-        position: "absolute",
-        inset: 0,
-        y: isBase ? 0 : y,
-        opacity: isBase ? 1 : opacity,
-        scale: isBase ? 1 : scale,
-        borderRadius: "32px",
-        overflow: "hidden",
-        boxShadow: isBase ? "0 20px 40px rgba(0,0,0,0.1)" : "0 -10px 50px rgba(0,0,0,0.3)",
-        transformOrigin: "center center",
-        border: "1px solid rgba(255,255,255,0.4)",
-        zIndex: index,
-        background: "#000"
-      }}
-    >
-      <img src={styleData.img} alt={styleData.name} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "48px" }}>
-         <h3 style={{ color: "#fff", fontSize: "3.5rem", margin: "0 0 8px 0", fontWeight: 600, letterSpacing: "-1px" }}>{styleData.name}</h3>
-         <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "1.2rem", margin: 0 }}>{styleData.desc}</p>
-      </div>
-    </motion.div>
-  );
-}
-
 // --- 3D Tilt Card Component ---
 function TiltCard({ children }) {
   const ref = useRef(null);
@@ -98,12 +61,6 @@ export default function LandingPage() {
   const { scrollY } = useScroll();
   
   const heroY = useTransform(scrollY, [0, 1000], [0, 400]);
-
-  const vibeRef = useRef(null);
-  const { scrollYProgress: vibeScroll } = useScroll({
-    target: vibeRef,
-    offset: ["start start", "end end"]
-  });
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -305,42 +262,92 @@ export default function LandingPage() {
         </motion.div>
       </motion.section>
 
-      {/* NEW: Travel Styles Section (Pinned Stack Layout) */}
-      <section ref={vibeRef} style={{ height: "400vh", position: "relative" }}>
-        <div style={{ position: "sticky", top: 0, height: "100vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-          <div className="vibe-container" style={{ display: "flex", alignItems: "center", gap: "80px", width: "100%", maxWidth: "1400px", margin: "0 auto", padding: "0 5%" }}>
-            
-            <div className="vibe-text" style={{ flex: 1 }}>
-              <h2 style={{ fontSize: "4.5rem", letterSpacing: "-2px", marginBottom: "24px", lineHeight: 1.1 }}>
-                Curate your <br /> perfect <span className="gradient-text">vibe.</span>
-              </h2>
-              <p style={{ fontSize: "1.2rem", color: "var(--ink-soft)", lineHeight: 1.6, marginBottom: "40px", maxWidth: "450px" }}>
-                Our AI engine deeply understands your unique travel persona. As you scroll, explore the different aesthetic and experiential modalities we offer to perfectly match your state of mind.
-              </p>
-              
-              <div style={{ display: "flex", gap: "20px" }}>
-                <div style={{ padding: "24px", background: "var(--surface)", borderRadius: "20px", flex: 1, border: "1px solid rgba(0,0,0,0.03)" }}>
-                  <h4 style={{ fontSize: "2.5rem", marginBottom: "4px", fontWeight: 600 }}>4+</h4>
-                  <p style={{ fontSize: "1rem", color: "var(--ink-soft)" }}>Curated Modalities</p>
-                </div>
-                <div style={{ padding: "24px", background: "var(--surface)", borderRadius: "20px", flex: 1, border: "1px solid rgba(0,0,0,0.03)" }}>
-                  <h4 style={{ fontSize: "2.5rem", marginBottom: "4px", fontWeight: 600 }}>100%</h4>
-                  <p style={{ fontSize: "1rem", color: "var(--ink-soft)" }}>Vibe-Matched</p>
-                </div>
-              </div>
-            </div>
+      {/* NEW: Travel Styles Section (Alternating Layout) */}
+      <section className="vibe-section" style={{ padding: "140px 5%", maxWidth: "1400px", margin: "0 auto" }}>
+        <motion.div 
+          style={{ textAlign: "center", marginBottom: "100px" }}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 style={{ fontSize: "4.5rem", letterSpacing: "-2px", marginBottom: "24px", lineHeight: 1.1 }}>
+            Curate your <span className="gradient-text">vibe.</span>
+          </h2>
+          <p style={{ fontSize: "1.25rem", color: "var(--ink-soft)", maxWidth: "650px", margin: "0 auto", lineHeight: 1.6 }}>
+            Our AI engine deeply understands your unique travel persona. Explore the aesthetic and experiential modalities we perfectly pair with your state of mind.
+          </p>
+        </motion.div>
 
-            <div className="vibe-cards" style={{ flex: 1.2, position: "relative", height: "600px", width: "100%", perspective: "1000px" }}>
-              {[
-                { name: "Adventure", img: "https://images.unsplash.com/photo-1522199755839-a2bacb67c546?q=80&w=800&auto=format&fit=crop", desc: "For the thrill-seekers." },
-                { name: "Luxury", img: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=800&auto=format&fit=crop", desc: "Five-star everything." },
-                { name: "Cultural", img: "https://images.unsplash.com/photo-1518398046578-8cca57782e17?q=80&w=800&auto=format&fit=crop", desc: "Immerse in the history." },
-                { name: "Relaxation", img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=800&auto=format&fit=crop", desc: "Unplug and unwind." }
-              ].map((style, i) => (
-                <VibeCard key={i} styleData={style} index={i} progress={vibeScroll} />
-              ))}
-            </div>
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "140px" }}>
+          {[
+            { 
+              name: "Adventure", category: "Thrill & Action", 
+              img: "https://images.unsplash.com/photo-1522199755839-a2bacb67c546?q=80&w=800&auto=format&fit=crop", 
+              desc: "For those who chase adrenaline. Discover hidden trails, conquer peaks, and experience raw nature. Our engine filters out the noise to put you right in the center of the action.",
+              tags: ["Hiking", "Extreme Sports", "Off-Grid"]
+            },
+            { 
+              name: "Luxury", category: "Elegance & Comfort",
+              img: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=800&auto=format&fit=crop", 
+              desc: "Five-star everything. From private infinity pools to Michelin-starred dining, we curate exclusive experiences that define opulence and pristine service.",
+              tags: ["Resorts", "Fine Dining", "First Class"]
+            },
+            { 
+              name: "Cultural", category: "History & Art",
+              img: "https://images.unsplash.com/photo-1518398046578-8cca57782e17?q=80&w=800&auto=format&fit=crop", 
+              desc: "Immerse yourself in history. Walk through ancient ruins, explore world-renowned museums, and connect with local traditions and vibrant artistic communities.",
+              tags: ["Museums", "Heritage", "Local Cuisine"]
+            },
+            { 
+              name: "Relaxation", category: "Wellness & Peace",
+              img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=800&auto=format&fit=crop", 
+              desc: "Unplug and unwind. Serene beaches, silent mountain retreats, and holistic wellness centers designed to rejuvenate your mind, body, and spirit.",
+              tags: ["Spa", "Beaches", "Mindfulness"]
+            }
+          ].map((style, i) => {
+            const isEven = i % 2 === 0;
+            return (
+              <div key={i} className={`vibe-row ${!isEven ? 'reverse' : ''}`}>
+                <motion.div 
+                  className="vibe-row-img"
+                  style={{ height: "550px", borderRadius: "32px", overflow: "hidden", boxShadow: "0 30px 60px rgba(0,0,0,0.12)" }}
+                  initial={{ opacity: 0, x: isEven ? -80 : 80, scale: 0.95 }}
+                  whileInView={{ opacity: 1, x: 0, scale: 1 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <img src={style.img} alt={style.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} className="scale-on-hover" />
+                </motion.div>
+                
+                <motion.div 
+                  className="vibe-row-content"
+                  initial={{ opacity: 0, x: isEven ? 80 : -80 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                >
+                  <div style={{ display: "inline-block", padding: "8px 16px", background: "var(--surface)", borderRadius: "99px", color: "var(--ink-soft)", fontWeight: 600, fontSize: "0.85rem", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "24px", border: "1px solid rgba(0,0,0,0.05)" }}>
+                    0{i+1} — {style.category}
+                  </div>
+                  <h3 style={{ fontSize: "3.5rem", fontWeight: 700, letterSpacing: "-1.5px", marginBottom: "24px", lineHeight: 1.1 }}>
+                    {style.name}
+                  </h3>
+                  <p style={{ fontSize: "1.2rem", color: "var(--ink-soft)", lineHeight: 1.7, marginBottom: "40px" }}>
+                    {style.desc}
+                  </p>
+                  
+                  <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                    {style.tags.map(tag => (
+                      <span key={tag} className="glass-badge" style={{ padding: "10px 20px", borderRadius: "12px", fontSize: "0.95rem", fontWeight: 500, color: "var(--ink)", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Sparkles size={14} color="var(--ink-soft)" /> {tag}
+                      </span>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            )
+          })}
         </div>
       </section>
 

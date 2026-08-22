@@ -1051,3 +1051,34 @@ button {
     margin-bottom: 40px;
   }
 }
+
+/* Alternating Vibe Rows */
+.vibe-row {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+}
+.vibe-row.reverse {
+  flex-direction: row-reverse;
+}
+.vibe-row-img {
+  flex: 1.2;
+  position: relative;
+}
+.vibe-row-content {
+  flex: 1;
+  padding: 20px;
+}
+@media (max-width: 900px) {
+  .vibe-row, .vibe-row.reverse {
+    flex-direction: column !important;
+    gap: 40px;
+  }
+  .vibe-row-img, .vibe-row-content {
+    width: 100%;
+    flex: none;
+  }
+  .vibe-row-content {
+    padding: 0;
+  }
+}
