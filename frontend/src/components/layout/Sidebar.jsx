@@ -1,7 +1,8 @@
-﻿import { NavLink } from "react-router-dom";
-import { LayoutDashboard, MapPin, Globe, User } from "lucide-react";
+import { NavLink, Link } from "react-router-dom";
+import { LayoutDashboard, MapPin, Globe, User, Home } from "lucide-react";
 
 const NAV_ITEMS = [
+  { to: "/",          icon: Home,            label: "Home"      },
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/trips",     icon: MapPin,          label: "My Trips"  },
   { to: "/explore",   icon: Globe,           label: "Explore"   },
@@ -30,10 +31,11 @@ export function Sidebar() {
     onMouseLeave={(e) => { e.currentTarget.style.width = "var(--sidebar-collapsed)"; }}
     >
       {/* Logo */}
-      <div style={{
+      <Link to="/" style={{
         width: "100%", padding: "4px 0 28px",
         display: "flex", alignItems: "center",
         gap: 10, paddingLeft: 18, overflow: "hidden",
+        textDecoration: "none"
       }}>
         <div style={{
           width: 28, height: 28, flexShrink: 0,
@@ -46,7 +48,7 @@ export function Sidebar() {
           whiteSpace: "nowrap", letterSpacing: "-0.02em",
           opacity: 0, transition: "opacity var(--t-normal)",
         }} className="sidebar-label">TRIPORA</span>
-      </div>
+      </Link>
 
       {/* Nav items */}
       <nav style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>

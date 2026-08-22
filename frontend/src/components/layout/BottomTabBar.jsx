@@ -1,8 +1,9 @@
-﻿import { NavLink } from "react-router-dom";
-import { LayoutDashboard, MapPin, Globe, User } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { LayoutDashboard, MapPin, Globe, User, Home } from "lucide-react";
 
 const TABS = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Home"    },
+  { to: "/",          icon: Home,            label: "Home"    },
+  { to: "/dashboard", icon: LayoutDashboard, label: "Dash"    },
   { to: "/trips",     icon: MapPin,          label: "Trips"   },
   { to: "/explore",   icon: Globe,           label: "Explore" },
   { to: "/profile",   icon: User,            label: "Profile" },
