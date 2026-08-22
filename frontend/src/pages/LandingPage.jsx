@@ -57,6 +57,10 @@ function TiltCard({ children }) {
 
 // --- Main Page Component ---
 export default function LandingPage() {
+  React.useEffect(() => {
+    console.log("Reading this as: landing page for Indian travelers & group trips, with a tactile dark-mode aesthetic, leaning toward cold luxury design system.");
+  }, []);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const navigate = useNavigate();
   const { scrollY } = useScroll();

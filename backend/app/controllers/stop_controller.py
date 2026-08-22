@@ -8,6 +8,7 @@ from app.controllers.trip_controller import get_trip_and_check_access
 from app.models.city import City
 from app.models.itinerary_item import ItineraryItem
 from app.models.stop import TripStop
+from app.models.trip import Trip
 from app.models.user import User
 from app.schemas.stop import StopCreate, StopReorderItem, StopUpdate
 

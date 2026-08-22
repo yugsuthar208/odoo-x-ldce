@@ -31,7 +31,7 @@ from app.routes import (
     transit_router,
 )
 
-logger = logging.getLogger("GlobeTrotterAPI")
+logger = logging.getLogger("TriporaBharatAPI")
 
 
 @asynccontextmanager
@@ -42,11 +42,11 @@ async def lifespan(app: FastAPI):
     - Preloads Scikit-Learn / XGBoost and SentenceTransformer models into app.state.
     - Logs startup and teardown messages.
     """
-    print("[GlobeTrotter API] Initializing database schema...")
+    print("[Tripora Bharat API] Initializing database schema...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    print("[GlobeTrotter API] Initializing upgraded ML modules...")
+    print("[Tripora Bharat API] Initializing upgraded ML modules...")
     app.state.budget_predictor = BudgetPredictor()
     if not app.state.budget_predictor.load():
         logger.warning("ML BudgetPredictor not found. Run python app/ml/train.py first.")
@@ -55,19 +55,19 @@ async def lifespan(app: FastAPI):
     if not app.state.recommender.load():
         logger.warning("ML HybridRecommender not found. Run python app/ml/train.py first.")
 
-    print("GlobeTrotter API started")
+    print("Tripora Bharat API started")
 
     yield
 
     await engine.dispose()
-    print("[GlobeTrotter API] Database connections closed.")
+    print("[Tripora Bharat API] Database connections closed.")
 
 
 # FastAPI Application Instance
 app = FastAPI(
-    title="GlobeTrotter API",
+    title="Tripora Bharat API",
     version="1.0.0",
-    description="Personalized Travel Planning Platform with Machine Learning & AI Intelligence",
+    description="Personalized Multi-City Travel Planning Platform across India",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",

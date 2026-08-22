@@ -391,7 +391,7 @@ async def generate_itinerary_with_ai(
 
 @router.get(
     "/{id}/budget",
-    response_model=APIResponse[BudgetCalculationOut],
+    response_model=APIResponse[dict],
     status_code=status.HTTP_200_OK,
     summary="Full cost breakdown for trip",
 )
@@ -400,7 +400,7 @@ async def get_trip_budget_breakdown(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Computes exact 12-step budget forecast and breakdown."""
+    """Computes exact budget forecast and breakdown."""
     budget_data = await calculate_trip_budget(trip_id=id, current_user=current_user, db=db)
     return APIResponse(
         success=True,
@@ -411,7 +411,7 @@ async def get_trip_budget_breakdown(
 
 @router.put(
     "/{id}/budget",
-    response_model=APIResponse[BudgetCalculationOut],
+    response_model=APIResponse[dict],
     status_code=status.HTTP_200_OK,
     summary="Update manual budget fields",
 )
