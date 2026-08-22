@@ -9,6 +9,11 @@ from app.routes.shared import router as shared_router
 from app.routes.stops import router as stops_router
 from app.routes.trips import router as trips_router
 from app.routes.users import router as users_router
+from app.routes.notifications import router as notifications_router
+from app.routes.websockets import router as websockets_router
+from app.routes.metrics import router as metrics_router
+from app.routes.audit import router as audit_router
+from app.routes.oauth import router as oauth_router
 
 __all__ = [
     "auth_router",
@@ -22,4 +27,9 @@ __all__ = [
     "shared_router",
     "favorites_router",
     "recommend_router",
+    "notifications_router",
+    "websockets_router",
+    "metrics_router",
+    "audit_router",
+    "oauth_router",
 ]

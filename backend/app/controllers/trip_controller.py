@@ -17,6 +17,8 @@ from app.models.trip import Trip
 from app.models.trip_collaborator import TripCollaborator
 from app.models.user import User
 from app.schemas.trip import TripCreate, TripUpdate
+from app.services.audit_service import log_audit_event
+from app.services.websocket_manager import ws_manager
 
 
 async def get_trip_and_check_access(
@@ -182,6 +184,17 @@ async def create_trip(db: AsyncSession, user_id: str, payload: TripCreate) -> Tr
     db.add(budget)
     await db.flush()
 
+    # Log audit event
+    await log_audit_event(
+        db=db,
+        action="TRIP_CREATED",
+        resource_type="trip",
+        resource_id=trip.id,
+        user_id=user_id,
+        trip_id=trip.id,
+        details={"title": trip.title, "total_budget": trip.total_budget},
+    )
+
     return await get_trip_detail(db=db, trip_id=trip.id, current_user=await db.get(User, user_id))
 
 
@@ -231,14 +244,61 @@ async def update_trip(
 
     db.add(trip)
     await db.flush()
+
+    # Log audit event
+    await log_audit_event(
+        db=db,
+        action="TRIP_UPDATED",
+        resource_type="trip",
+        resource_id=trip.id,
+        user_id=current_user.id,
+        trip_id=trip.id,
+        details=payload.model_dump(exclude_unset=True, mode="json"),
+    )
+
+    # Broadcast real-time update to WebSocket room
+    await ws_manager.broadcast_to_trip(
+        trip_id=trip.id,
+        message={
+            "type": "TRIP_MODIFIED",
+            "action": "TRIP_UPDATED",
+            "user": {"id": current_user.id, "full_name": current_user.full_name},
+            "trip_id": trip.id,
+        }
+    )
+
     return await get_trip_detail(db=db, trip_id=trip.id, current_user=current_user)
 
 
 async def delete_trip(db: AsyncSession, trip_id: str, current_user: User) -> dict:
     """Deletes trip (owner only) cascading all related entities."""
     trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="owner")
+    
+    # Log audit event before deletion
+    await log_audit_event(
+        db=db,
+        action="TRIP_DELETED",
+        resource_type="trip",
+        resource_id=trip.id,
+        user_id=current_user.id,
+        trip_id=trip.id,
+        details={"title": trip.title},
+    )
+
     await db.delete(trip)
     await db.flush()
+
+    # Broadcast trip deletion
+    await ws_manager.broadcast_to_trip(
+        trip_id=trip_id,
+        message={
+            "type": "TRIP_MODIFIED",
+            "action": "TRIP_DELETED",
+            "user": {"id": current_user.id, "full_name": current_user.full_name},
+            "trip_id": trip_id,
+        }
+    )
+
     return {"message": "Trip deleted successfully"}
 
 

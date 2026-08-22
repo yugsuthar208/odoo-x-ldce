@@ -18,6 +18,15 @@ class User(Base):
     language = Column(String(10), default="en", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+    # Convenience properties / aliases
+    @property
+    def full_name(self) -> str:
+        return self.name
+
+    @property
+    def avatar_url(self) -> str:
+        return self.profile_photo
+
     # Relationships
     trips = relationship("Trip", back_populates="user", cascade="all, delete-orphan", lazy="selectin")
     favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan", lazy="selectin")

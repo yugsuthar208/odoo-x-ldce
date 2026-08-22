@@ -8,6 +8,9 @@ from app.controllers.trip_controller import get_trip_and_check_access
 from app.models.trip_collaborator import TripCollaborator
 from app.models.user import User
 from app.schemas.trip_collaborator import CollaboratorAddRequest
+from app.services.audit_service import log_audit_event
+from app.controllers.notification_controller import NotificationController
+from app.services.websocket_manager import ws_manager
 
 
 async def add_collaborator(
@@ -47,6 +50,7 @@ async def add_collaborator(
 
     if collab:
         collab.role = role_val
+        action_type = "ROLE_UPDATED"
     else:
         collab = TripCollaborator(
             trip_id=trip_id,
@@ -54,8 +58,40 @@ async def add_collaborator(
             role=role_val,
         )
         db.add(collab)
+        action_type = "COLLABORATOR_ADDED"
 
     await db.flush()
+
+    # Log audit event
+    await log_audit_event(
+        db=db,
+        action=action_type,
+        resource_type="collaborator",
+        resource_id=collab.id,
+        user_id=current_user.id,
+        trip_id=trip_id,
+        details={"collaborator_email": target_user.email, "role": role_val},
+    )
+
+    # Push Notification to target user
+    await NotificationController.create_and_push(
+        db=db,
+        user_id=target_user.id,
+        type="COLLABORATOR_INVITE",
+        title=f"Invited to collaborate on '{trip.title}'",
+        message=f"{current_user.full_name} invited you to join the trip '{trip.title}' as an {role_val}.",
+        data={"trip_id": trip_id, "role": role_val},
+    )
+
+    # Broadcast to trip room
+    await ws_manager.broadcast_to_trip(
+        trip_id=trip_id,
+        message={
+            "type": "COLLABORATOR_EVENT",
+            "action": action_type,
+            "collaborator": {"id": target_user.id, "email": target_user.email, "role": role_val},
+        }
+    )
 
     res = await db.execute(
         select(TripCollaborator)
@@ -110,6 +146,16 @@ async def remove_collaborator(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Collaborator not found on this trip",
         )
+
+    await log_audit_event(
+        db=db,
+        action="COLLABORATOR_REMOVED",
+        resource_type="collaborator",
+        resource_id=collab.id,
+        user_id=current_user.id,
+        trip_id=trip_id,
+        details={"user_id_removed": user_id_to_remove},
+    )
 
     await db.delete(collab)
     await db.flush()

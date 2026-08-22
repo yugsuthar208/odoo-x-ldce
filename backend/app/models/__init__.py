@@ -10,6 +10,8 @@ from app.models.budget import Budget
 from app.models.favorite import Favorite
 from app.models.shared_link import SharedLink
 from app.models.trip_collaborator import TripCollaborator
+from app.models.notification import Notification
+from app.models.audit_log import AuditLog
 
 __all__ = [
     "Base",
@@ -26,4 +28,6 @@ __all__ = [
     "Favorite",
     "SharedLink",
     "TripCollaborator",
+    "Notification",
+    "AuditLog",
 ]

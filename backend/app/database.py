@@ -25,6 +25,8 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
+async_session_factory = AsyncSessionLocal
+
 
 class Base(DeclarativeBase):
     """Base declarative class for all SQLAlchemy database models."""

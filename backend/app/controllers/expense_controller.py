@@ -9,6 +9,9 @@ from app.models.expense import Expense
 from app.models.trip import Trip
 from app.models.user import User
 from app.schemas.expense import ExpenseCreate, ExpenseUpdate
+from app.services.audit_service import log_audit_event
+from app.controllers.notification_controller import NotificationController
+from app.services.websocket_manager import ws_manager
 
 
 async def create_expense(
@@ -18,7 +21,7 @@ async def create_expense(
     payload: ExpenseCreate,
 ) -> Expense:
     """Logs an expense for a trip after verifying editor/owner access."""
-    await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="editor")
+    trip = await get_trip_and_check_access(db=db, trip_id=trip_id, user_id=current_user.id, required_role="editor")
 
     expense = Expense(
         trip_id=trip_id,
@@ -32,6 +35,55 @@ async def create_expense(
     db.add(expense)
     await db.flush()
     await db.refresh(expense)
+
+    # Log audit event
+    await log_audit_event(
+        db=db,
+        action="EXPENSE_CREATED",
+        resource_type="expense",
+        resource_id=expense.id,
+        user_id=current_user.id,
+        trip_id=trip_id,
+        details={
+            "description": expense.description,
+            "actual_amount": expense.actual_amount,
+            "category": expense.category,
+        },
+    )
+
+    # Broadcast expense creation to live trip room
+    await ws_manager.broadcast_to_trip(
+        trip_id=trip_id,
+        message={
+            "type": "EXPENSE_EVENT",
+            "action": "EXPENSE_CREATED",
+            "expense": {
+                "id": expense.id,
+                "description": expense.description,
+                "amount": expense.actual_amount or expense.estimated_amount,
+                "category": expense.category,
+            }
+        }
+    )
+
+    # Check budget threshold for budget alert notification
+    if trip.total_budget and trip.total_budget > 0:
+        # Sum actual expenses
+        exp_res = await db.execute(select(Expense).where(Expense.trip_id == trip_id))
+        all_exp = exp_res.scalars().all()
+        total_spent = sum((e.actual_amount or e.estimated_amount or 0.0) for e in all_exp)
+        usage_pct = (total_spent / trip.total_budget) * 100
+
+        if usage_pct >= 90.0:
+            await NotificationController.create_and_push(
+                db=db,
+                user_id=trip.user_id,
+                type="BUDGET_ALERT",
+                title=f"⚠️ Budget Warning: {trip.title}",
+                message=f"You have used {usage_pct:.1f}% of your budget for '{trip.title}' (${total_spent:.2f}/${trip.total_budget:.2f}).",
+                data={"trip_id": trip_id, "usage_pct": round(usage_pct, 1), "total_spent": total_spent},
+            )
+
     return expense
 
 

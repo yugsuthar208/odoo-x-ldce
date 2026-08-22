@@ -9,6 +9,7 @@ from app.config import settings
 from app.database import Base, engine
 from app.ml.budget_predictor import BudgetPredictor
 from app.ml.recommender import HybridRecommender
+from app.middleware.observability import ObservabilityMiddleware
 from app.routes import (
     activities_router,
     auth_router,
@@ -21,6 +22,11 @@ from app.routes import (
     stops_router,
     trips_router,
     users_router,
+    notifications_router,
+    websockets_router,
+    metrics_router,
+    audit_router,
+    oauth_router,
 )
 
 logger = logging.getLogger("GlobeTrotterAPI")
@@ -65,6 +71,9 @@ app = FastAPI(
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
+
+# Observability & Correlation ID Middleware
+app.add_middleware(ObservabilityMiddleware)
 
 # CORS Middleware
 origins = settings.BACKEND_CORS_ORIGINS
@@ -133,13 +142,15 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # ============================================================================
-# HEALTH CHECK
+# HEALTH & METRICS ENDPOINTS
 # ============================================================================
 
 @app.get("/health", tags=["Health"])
 async def health_check():
     """Service health check endpoint."""
     return {"status": "ok", "version": "1.0.0"}
+
+app.include_router(metrics_router)  # /metrics root endpoint
 
 
 # ============================================================================
@@ -149,6 +160,7 @@ async def health_check():
 api_v1_prefix = settings.API_V1_STR
 
 app.include_router(auth_router, prefix=api_v1_prefix)
+app.include_router(oauth_router, prefix=api_v1_prefix)
 app.include_router(users_router, prefix=api_v1_prefix)
 app.include_router(cities_router, prefix=api_v1_prefix)
 app.include_router(activities_router, prefix=api_v1_prefix)
@@ -159,6 +171,9 @@ app.include_router(expenses_router, prefix=api_v1_prefix)
 app.include_router(shared_router, prefix=api_v1_prefix)
 app.include_router(favorites_router, prefix=api_v1_prefix)
 app.include_router(recommend_router, prefix=api_v1_prefix)
+app.include_router(notifications_router, prefix=api_v1_prefix)
+app.include_router(websockets_router, prefix=api_v1_prefix)
+app.include_router(audit_router, prefix=api_v1_prefix)
 
 
 if __name__ == "__main__":
