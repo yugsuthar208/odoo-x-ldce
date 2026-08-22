@@ -61,4 +61,3 @@ Thumbs.db
 backend/app/ml/models/sentence_model/
 node_modules/
 .npm/
-frontend/
